@@ -66,7 +66,6 @@ public class Bullet : NetworkBehaviour
             }
 
             if (IsServer && player != this.player){
-                Debug.Log("Server");
                 TankGameMultiplayer.Instance.InflictDamage(player, damage);
                 TankGameMultiplayer.Instance.DestroyBullet(this);
             }

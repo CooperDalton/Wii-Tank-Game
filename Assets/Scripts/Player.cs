@@ -27,6 +27,7 @@ public class Player : NetworkBehaviour{
     [SerializeField] private Transform altFireSmoke;
     [SerializeField] private Transform primaryFireSmoke;
     [SerializeField] private Transform aliveContainer;
+    [SerializeField] private Transform deathExplosionEffect;
 
     [Header("Settings")]
     [SerializeField] private float speed;
@@ -41,6 +42,7 @@ public class Player : NetworkBehaviour{
     private int numExplosionBullets = 9999;
     private bool canShoot;
     private bool isAlive;
+    private float prevXDir = 0f;
 
     private Player spectatePlayer;
     private List<Transform> bulletList = new List<Transform>();
@@ -89,6 +91,19 @@ public class Player : NetworkBehaviour{
     {
         if (spectatePlayer != null){
             CinemaMachine.Instance.SetPlayerToCamera(spectatePlayer);
+        }
+
+        Vector3 moveVector = GameInput.Instance.GetMovementVectorNormalized();
+
+        float xDir = moveVector.x;
+        if (prevXDir != xDir){
+            prevXDir = xDir;
+            if (xDir > 0){
+                spectatePlayer = TankGameMultiplayer.Instance.GetNextSpectatePlayer(spectatePlayer, true);
+            }
+            if (xDir < 0){
+                spectatePlayer = TankGameMultiplayer.Instance.GetNextSpectatePlayer(spectatePlayer, false);
+            }
         }
 
 
@@ -296,14 +311,22 @@ public class Player : NetworkBehaviour{
     }
 
     public void Die(){
-        spectatePlayer = TankGameMultiplayer.Instance.SpectatePlayerFromIndex(0);
         isAlive = false;
+        spectatePlayer = TankGameMultiplayer.Instance.SpectatePlayerFromIndex(0);
 
+        TankGameMultiplayer.Instance.SpawnGeneralObject(deathExplosionEffect, transform.position.x, transform.position.y);
+        ClearInputData();
         DeactiveBody();
     }
 
     public bool IsAlive(){
         return isAlive;
+    }
+
+    private void ClearInputData(){
+        GameInput.Instance.OnShootAction -= ShootStarted;
+        GameInput.Instance.OnShootCanceledAction -= ShootCanceled;
+        GameInput.Instance.OnAltFireAction -= AltFire;
     }
     
 }

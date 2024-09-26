@@ -4,11 +4,18 @@ using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.SocialPlatforms;
 using Unity.VisualScripting.FullSerializer;
+using System.Linq;
+using System;
 
 public class TankGameMultiplayer : NetworkBehaviour{
 
     
     public static TankGameMultiplayer Instance { get; private set; }
+
+    public event EventHandler<OnPlayerWonEventArgs> OnPlayerWon;
+    public class OnPlayerWonEventArgs : EventArgs{
+        public Player player;
+    }
 
     [SerializeField] private BulletList bulletList;
     [SerializeField] private GeneralObjectSOList generalObjectSOList;
@@ -184,9 +191,10 @@ public class TankGameMultiplayer : NetworkBehaviour{
     private List<Player> GetAlivePlayers(){
         List<Player> alivePlayers = players;
 
-        foreach(Player p in alivePlayers){
-            if (p.IsAlive() == false){
-                alivePlayers.Remove(p);
+        for(int i = 0; i < alivePlayers.Count; i++){
+            if (alivePlayers.ElementAt(i).IsAlive() == false){
+                alivePlayers.RemoveAt(i);
+                i--;
             }
         }
 
@@ -205,21 +213,29 @@ public class TankGameMultiplayer : NetworkBehaviour{
         }
 
         if (index > alivePlayers.Count - 1){
-            index = 0;
-            return alivePlayers[index];
+            return player;
         }
         
         if (index < 0){
-            index = alivePlayers.Count - 1;
-            return alivePlayers[index];
+            return player;
         }
 
-        return alivePlayers[index];
+        return alivePlayers.ElementAt(index);
     }
 
     public Player SpectatePlayerFromIndex(int index){
+        //Always runs when player dies
         List<Player> alivePlayers = GetAlivePlayers();
+        if (alivePlayers.Count <= 1){
+            //Game is over one player is left
+            Player winningPlayer = alivePlayers[0];
 
-        return alivePlayers[index];
+            OnPlayerWon?.Invoke(this, new OnPlayerWonEventArgs{
+                player = winningPlayer
+            });
+        }
+        
+
+        return alivePlayers.ElementAt(index);
     }
 }
