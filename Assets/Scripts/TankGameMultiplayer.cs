@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using UnityEngine.SocialPlatforms;
+using Unity.VisualScripting.FullSerializer;
 
 public class TankGameMultiplayer : NetworkBehaviour{
 
@@ -82,6 +84,39 @@ public class TankGameMultiplayer : NetworkBehaviour{
 
     }
 
+    public void SpawnGeneralObjectWithParent(Transform generalObject, float x, float y, Player player, float rotation){
+        int generalObjectIndex = GetGeneralObjectIndex(generalObject);
+        SpawnGeneralObjectWithParentServerRpc(generalObjectIndex, x, y, player.GetNetworkObject(), rotation);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SpawnGeneralObjectWithParentServerRpc(int generalObjectIndex, float x, float y, NetworkObjectReference playerNetworkObjectReference, float rotation){
+        Transform generalObjectPrefab = GetGeneralObjectFromIndex(generalObjectIndex);
+        playerNetworkObjectReference.TryGet(out NetworkObject playerNetworkObject);
+        Player player = playerNetworkObject.GetComponent<Player>();
+
+        Transform generalObject = Instantiate (generalObjectPrefab, new Vector2(x, y), Quaternion.Euler(0,0,rotation));
+
+        NetworkObject generalObjectNetworkObject = generalObject.GetComponent<NetworkObject>();
+        generalObjectNetworkObject.Spawn(true);
+
+        if (generalObject.TryGetComponent(out FollowParent followParent)){
+            GeneralObjectSetParentClientRpc(playerNetworkObject, followParent.GetNetworkObject());
+        }
+
+    }
+
+    [ClientRpc]
+    private void GeneralObjectSetParentClientRpc(NetworkObjectReference playerNetworkBehaviourReference, NetworkObjectReference followParentNetworkBehaviourReference){
+        playerNetworkBehaviourReference.TryGet(out NetworkObject playerNetworkObject);
+        Player player = playerNetworkObject.GetComponent<Player>();
+        
+        followParentNetworkBehaviourReference.TryGet(out NetworkObject followParentNetworkObject);
+        FollowParent followParent = followParentNetworkObject.GetComponent<FollowParent>();
+
+        followParent.SetParent(player.getGunShotTransform());
+    }
+
     public void DestroyGeneralObject(IGeneralObject generalObject){
         DestroyGeneralObjectServerRpc(generalObject.GetNetworkObject());
     }
@@ -144,5 +179,47 @@ public class TankGameMultiplayer : NetworkBehaviour{
 
     public void RemovePlayer(Player player){
         players.Remove(player);
+    }
+
+    private List<Player> GetAlivePlayers(){
+        List<Player> alivePlayers = players;
+
+        foreach(Player p in alivePlayers){
+            if (p.IsAlive() == false){
+                alivePlayers.Remove(p);
+            }
+        }
+
+        return alivePlayers;
+
+    }
+
+    public Player GetNextSpectatePlayer(Player player, bool right){
+        int index = players.IndexOf(player);
+        List<Player> alivePlayers = GetAlivePlayers();
+
+        if (right){
+            index++;
+        } else {
+            index--;
+        }
+
+        if (index > alivePlayers.Count - 1){
+            index = 0;
+            return alivePlayers[index];
+        }
+        
+        if (index < 0){
+            index = alivePlayers.Count - 1;
+            return alivePlayers[index];
+        }
+
+        return alivePlayers[index];
+    }
+
+    public Player SpectatePlayerFromIndex(int index){
+        List<Player> alivePlayers = GetAlivePlayers();
+
+        return alivePlayers[index];
     }
 }

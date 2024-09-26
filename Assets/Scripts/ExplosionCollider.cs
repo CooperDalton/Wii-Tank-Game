@@ -38,7 +38,10 @@ public class ExplosionCollider : NetworkBehaviour{
                 }
                 //If nothing blocking Line of sight kill player
                 Player player = hitObject.GetComponent<Player>();
-                player.TakeDamage(maxDamage*(Vector3.Distance(player.transform.position, transform.position)/explosionRadius));
+
+                float damage = maxDamage*Vector3.Distance(player.transform.position, transform.position)/explosionRadius;
+                float damageClamped = Mathf.Clamp(damage, 0, 40);
+                player.TakeDamage(damageClamped);
             }
         }
 

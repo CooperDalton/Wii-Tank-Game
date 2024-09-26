@@ -14,6 +14,13 @@ public class PlayerVisual : NetworkBehaviour
     private void Start() {
         player.OnShoot += Player_OnShoot;
         player.OnAltShoot += Player_OnAltShoot;
+        player.OnDamaged += Player_OnDamaged;
+    }
+
+    private void Player_OnDamaged(object sender, Player.OnTookDamage e)
+    {
+        gunAnim.SetTrigger("TookDamage");
+        bodyAnim.SetTrigger("TookDamage");
     }
 
     private void Player_OnAltShoot(object sender, EventArgs e)
@@ -24,7 +31,7 @@ public class PlayerVisual : NetworkBehaviour
 
     private void Player_OnShoot(object sender, EventArgs e){
         if (!IsOwner) return;
-        gunAnim.SetTrigger("Shoot");
+        gunAnim.SetTrigger("ShootPrimary");
     }
 
     public void SetTurning(bool isTurning){

@@ -24,6 +24,9 @@ public class Player : NetworkBehaviour{
     [SerializeField] private Transform gunShotPointTransform;
     [SerializeField] private Transform bulletPrefab;
     [SerializeField] private Transform explosionBulletPrefab;
+    [SerializeField] private Transform altFireSmoke;
+    [SerializeField] private Transform primaryFireSmoke;
+    [SerializeField] private Transform aliveContainer;
 
     [Header("Settings")]
     [SerializeField] private float speed;
@@ -37,7 +40,9 @@ public class Player : NetworkBehaviour{
     private bool isShooting;
     private int numExplosionBullets = 9999;
     private bool canShoot;
+    private bool isAlive;
 
+    private Player spectatePlayer;
     private List<Transform> bulletList = new List<Transform>();
 
     private void Awake() {
@@ -49,6 +54,7 @@ public class Player : NetworkBehaviour{
         NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_OnClientDisconnected;
         
         TankGameMultiplayer.Instance.AddPlayer(this);
+        isAlive = true;
     }
 
 
@@ -59,12 +65,43 @@ public class Player : NetworkBehaviour{
         canShoot = true;
     }
 
+    private void Update() {
+        if (!IsOwner) return;
+        if (isAlive){
+            //Player is Alive
+            shootingTimer -= Time.deltaTime;
+
+            Vector3 moveVector = GameInput.Instance.GetMovementVectorNormalized();
+            
+            RotateOrientationToMouse();
+            HandleMovement(moveVector);
+
+            if (isShooting){
+                Shooting();
+            }
+        } else{
+            //Player is Dead
+            HandleSpectate();
+        }
+    }
+
+    private void HandleSpectate()
+    {
+        if (spectatePlayer != null){
+            CinemaMachine.Instance.SetPlayerToCamera(spectatePlayer);
+        }
+
+
+    }
+
     private void AltFire(object sender, EventArgs e){
         if (!IsOwner) return;
 
         if (numExplosionBullets > 0){
             numExplosionBullets--;
             TankGameMultiplayer.Instance.SpawnBullet(explosionBulletPrefab, gunShotPointTransform.position.x, gunShotPointTransform.position.y, headOrientation.rotation.eulerAngles.z, this, false);
+            TankGameMultiplayer.Instance.SpawnGeneralObjectWithParent(altFireSmoke, gunShotPointTransform.position.x, gunShotPointTransform.position.y, this, gunShotPointTransform.rotation.z);
+            
             OnAltShoot?.Invoke(this, EventArgs.Empty);
         }
     }
@@ -74,6 +111,7 @@ public class Player : NetworkBehaviour{
         if (shootingTimer <= 0 && bulletList.Count < numberOfBullets && canShoot) {
             shootingTimer = timeTillShot;
             TankGameMultiplayer.Instance.SpawnBullet(bulletPrefab, gunShotPointTransform.position.x, gunShotPointTransform.position.y, headOrientation.rotation.eulerAngles.z, this, true);
+            TankGameMultiplayer.Instance.SpawnGeneralObjectWithParent(primaryFireSmoke, gunShotPointTransform.position.x, gunShotPointTransform.position.y, this, gunShotPointTransform.rotation.z);
 
             OnShoot?.Invoke(this, EventArgs.Empty);
         }
@@ -90,21 +128,6 @@ public class Player : NetworkBehaviour{
 
     public void RemoveBullet(Transform bullet){
         bulletList.Remove(bullet);
-    }
-
-    private void Update() {
-        if (!IsOwner) return;
-        shootingTimer -= Time.deltaTime;
-
-        Vector3 moveVector = GameInput.Instance.GetMovementVectorNormalized();
-        
-        RotateOrientationToMouse();
-        HandleMovement(moveVector);
-
-        if (isShooting){
-            Shooting();
-        }
-
     }
 
     private void HandleMovement(Vector3 moveVector){
@@ -247,8 +270,16 @@ public class Player : NetworkBehaviour{
         return bulletSpeed;
     }
 
+    public Transform getGunShotTransform(){
+        return gunShotPointTransform;
+    }
+
     public void TakeDamage(float damage){
         health -= damage;
+
+        float damageShakeTime = Mathf.Clamp(damage/100, 0.1f, 0.5f);
+        ShakeCamera(Mathf.Clamp(damage, 0, 40), damageShakeTime);
+
         OnDamaged?.Invoke(this, new OnTookDamage{
             health = health/maxHealth
         });
@@ -258,8 +289,21 @@ public class Player : NetworkBehaviour{
         }
     }
 
+    private void DeactiveBody(){
+        aliveContainer.gameObject.SetActive(false);
+        Destroy(rb);
+        Destroy(GetComponent<CircleCollider2D>());
+    }
+
     public void Die(){
-        Debug.Log("Player died");
+        spectatePlayer = TankGameMultiplayer.Instance.SpectatePlayerFromIndex(0);
+        isAlive = false;
+
+        DeactiveBody();
+    }
+
+    public bool IsAlive(){
+        return isAlive;
     }
     
 }
