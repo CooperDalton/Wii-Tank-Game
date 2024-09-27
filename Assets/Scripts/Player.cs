@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Unity.Netcode;
+using System.Runtime.CompilerServices;
 
 public class Player : NetworkBehaviour{
 
@@ -43,6 +44,7 @@ public class Player : NetworkBehaviour{
     private bool canShoot;
     private bool isAlive;
     private float prevXDir = 0f;
+    private CircleCollider2D circleCollider;
 
     private Player spectatePlayer;
     private List<Transform> bulletList = new List<Transform>();
@@ -61,10 +63,12 @@ public class Player : NetworkBehaviour{
 
 
     private void Start() {
+        circleCollider = GetComponent<CircleCollider2D>();
         health = maxHealth;
         if (!IsOwner) return;
         CinemaMachine.Instance.SetPlayerToCamera(this);
         canShoot = true;
+
     }
 
     private void Update() {
@@ -99,10 +103,16 @@ public class Player : NetworkBehaviour{
         if (prevXDir != xDir){
             prevXDir = xDir;
             if (xDir > 0){
-                spectatePlayer = TankGameMultiplayer.Instance.GetNextSpectatePlayer(spectatePlayer, true);
+                Player nextSpectatePlayer = TankGameMultiplayer.Instance.GetNextSpectatePlayer(spectatePlayer, true);
+                if (nextSpectatePlayer != null){
+                    spectatePlayer = nextSpectatePlayer;
+                }
             }
             if (xDir < 0){
-                spectatePlayer = TankGameMultiplayer.Instance.GetNextSpectatePlayer(spectatePlayer, false);
+                Player nextSpectatePlayer = TankGameMultiplayer.Instance.GetNextSpectatePlayer(spectatePlayer, false);
+                if (nextSpectatePlayer != null){
+                    spectatePlayer = nextSpectatePlayer;
+                }
             }
         }
 
@@ -305,18 +315,37 @@ public class Player : NetworkBehaviour{
     }
 
     private void DeactiveBody(){
+        DeactiveBodyServerRpc();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void DeactiveBodyServerRpc(){
+        DeactiveBodyClientRpc();
+    }
+
+    [ClientRpc]
+    private void DeactiveBodyClientRpc(){
         aliveContainer.gameObject.SetActive(false);
-        Destroy(rb);
-        Destroy(GetComponent<CircleCollider2D>());
+        circleCollider.enabled = false;
     }
 
     public void Die(){
         isAlive = false;
-        spectatePlayer = TankGameMultiplayer.Instance.SpectatePlayerFromIndex(0);
+
+        Player nextSpectatePlayer = TankGameMultiplayer.Instance.SpectatePlayerFromIndex(0);
+        if (nextSpectatePlayer != null){
+            spectatePlayer = nextSpectatePlayer;
+        }
+
 
         TankGameMultiplayer.Instance.SpawnGeneralObject(deathExplosionEffect, transform.position.x, transform.position.y);
         ClearInputData();
         DeactiveBody();
+
+        if (IsOwner){
+            RespawningUI.Instance.Show();
+            StartCoroutine(RespawnTimer());
+        }
     }
 
     public bool IsAlive(){
@@ -328,5 +357,45 @@ public class Player : NetworkBehaviour{
         GameInput.Instance.OnShootCanceledAction -= ShootCanceled;
         GameInput.Instance.OnAltFireAction -= AltFire;
     }
-    
+
+    private IEnumerator RespawnTimer(){
+        //waits 3 seconds then respawn the player
+        float respawnTime = 3f;
+        yield return new WaitForSeconds(respawnTime);
+        Respawn();
+    }
+
+    private void Respawn()
+    {
+        transform.position = TankGameMultiplayer.Instance.GetSpawnPosition();
+        health = maxHealth;
+
+        CinemaMachine.Instance.SetPlayerToCamera(this);
+
+        GameInput.Instance.OnShootAction += ShootStarted;
+        GameInput.Instance.OnShootCanceledAction += ShootCanceled;
+        GameInput.Instance.OnAltFireAction += AltFire;
+        
+        RespawnServerRpc();
+
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void RespawnServerRpc(){
+        RespawnClientRpc();
+    }
+
+    [ClientRpc]
+    private void RespawnClientRpc(){
+        health = maxHealth;
+
+        OnDamaged?.Invoke(this, new OnTookDamage{
+            health = health/maxHealth
+        });
+        
+        
+        aliveContainer.gameObject.SetActive(true);
+        circleCollider.enabled = true;
+        isAlive = true;
+    }
 }

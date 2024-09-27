@@ -6,6 +6,7 @@ using UnityEngine.SocialPlatforms;
 using Unity.VisualScripting.FullSerializer;
 using System.Linq;
 using System;
+using Mono.CSharp;
 
 public class TankGameMultiplayer : NetworkBehaviour{
 
@@ -19,6 +20,7 @@ public class TankGameMultiplayer : NetworkBehaviour{
 
     [SerializeField] private BulletList bulletList;
     [SerializeField] private GeneralObjectSOList generalObjectSOList;
+    [SerializeField] private Vector3[] spawnLocations;
 
     private List<Player> players = new List<Player>();
 
@@ -205,6 +207,9 @@ public class TankGameMultiplayer : NetworkBehaviour{
     public Player GetNextSpectatePlayer(Player player, bool right){
         int index = players.IndexOf(player);
         List<Player> alivePlayers = GetAlivePlayers();
+        if (alivePlayers.Count <= 0){
+            return null;
+        }
 
         if (right){
             index++;
@@ -226,16 +231,32 @@ public class TankGameMultiplayer : NetworkBehaviour{
     public Player SpectatePlayerFromIndex(int index){
         //Always runs when player dies
         List<Player> alivePlayers = GetAlivePlayers();
-        if (alivePlayers.Count <= 1){
-            //Game is over one player is left
-            Player winningPlayer = alivePlayers[0];
+        if (alivePlayers.Count <= 0){
+            return null;
+        }
+        return alivePlayers.ElementAt(index);
+    }
 
-            OnPlayerWon?.Invoke(this, new OnPlayerWonEventArgs{
-                player = winningPlayer
-            });
+    public Vector3 GetSpawnPosition(){
+
+        bool validPos = false;
+        Vector3 spawnPos = Vector3.zero;
+
+
+        while (!validPos){
+
+            spawnPos = spawnLocations[UnityEngine.Random.Range(0, spawnLocations.Length)];
+
+            validPos = true;
+            foreach(Player player in GetAlivePlayers()){
+                if (Vector3.Distance(spawnPos, player.transform.position) < 5f){
+                    validPos = false;
+                    break;
+                }
+            }
         }
         
+        return spawnPos;
 
-        return alivePlayers.ElementAt(index);
     }
 }

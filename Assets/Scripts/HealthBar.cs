@@ -55,4 +55,8 @@ public class HealthBar : MonoBehaviour{
     private void UpdateHealthClientRpc(float health){
         greenHealthBar.fillAmount = health;
     }
+
+    public void UpdateHealth(float health){
+        greenHealthBar.fillAmount = health;
+    }
 }
