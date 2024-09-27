@@ -93,6 +93,9 @@ public class Player : NetworkBehaviour{
 
     private void HandleSpectate()
     {
+
+        //SPECTATE SYSTEM
+        
         if (spectatePlayer != null){
             CinemaMachine.Instance.SetPlayerToCamera(spectatePlayer);
         }
@@ -114,9 +117,7 @@ public class Player : NetworkBehaviour{
                     spectatePlayer = nextSpectatePlayer;
                 }
             }
-        }
-
-
+        } 
     }
 
     private void AltFire(object sender, EventArgs e){
@@ -245,7 +246,6 @@ public class Player : NetworkBehaviour{
 
     public void DestroyOwnBullet(Bullet bullet, float damage){
         if (!IsOwner) return;
-        Debug.Log("Player");
         TankGameMultiplayer.Instance.InflictDamage(this, damage);
         TankGameMultiplayer.Instance.DestroyBullet(bullet);
     }
@@ -332,10 +332,16 @@ public class Player : NetworkBehaviour{
     public void Die(){
         isAlive = false;
 
+        //SPECTATE SYSTEM. HAD BUGS AND NOT REALLY IMPORTANT TO GAMEPLAY
+        /*
         Player nextSpectatePlayer = TankGameMultiplayer.Instance.SpectatePlayerFromIndex(0);
         if (nextSpectatePlayer != null){
             spectatePlayer = nextSpectatePlayer;
+        } else {
+            spectatePlayer = this;
         }
+        */
+        spectatePlayer = this;
 
 
         TankGameMultiplayer.Instance.SpawnGeneralObject(deathExplosionEffect, transform.position.x, transform.position.y);
@@ -367,8 +373,8 @@ public class Player : NetworkBehaviour{
 
     private void Respawn()
     {
+        isAlive = true;
         transform.position = TankGameMultiplayer.Instance.GetSpawnPosition();
-        health = maxHealth;
 
         CinemaMachine.Instance.SetPlayerToCamera(this);
 
@@ -387,6 +393,7 @@ public class Player : NetworkBehaviour{
 
     [ClientRpc]
     private void RespawnClientRpc(){
+        isAlive = true;
         health = maxHealth;
 
         OnDamaged?.Invoke(this, new OnTookDamage{
@@ -396,6 +403,6 @@ public class Player : NetworkBehaviour{
         
         aliveContainer.gameObject.SetActive(true);
         circleCollider.enabled = true;
-        isAlive = true;
+
     }
 }

@@ -43,7 +43,8 @@ public class HealthBar : MonoBehaviour{
     private void Player_OnDamaged(object sender, Player.OnTookDamage e)
     {
         float health = e.health;
-        UpdateHealthServerRpc(health);
+        greenHealthBar.fillAmount = health;
+        //UpdateHealthServerRpc(health);
     }
 
     [ServerRpc(RequireOwnership = false)]

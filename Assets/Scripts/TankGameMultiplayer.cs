@@ -191,7 +191,7 @@ public class TankGameMultiplayer : NetworkBehaviour{
     }
 
     private List<Player> GetAlivePlayers(){
-        List<Player> alivePlayers = players;
+        List<Player> alivePlayers = new List<Player>(players);
 
         for(int i = 0; i < alivePlayers.Count; i++){
             if (alivePlayers.ElementAt(i).IsAlive() == false){

@@ -24,24 +24,26 @@ public class ExplosionCollider : NetworkBehaviour{
     private void Start() {
         TankGameMultiplayer.Instance.ShakePlayersScreens(transform.position, magnitudeShake, timeShake);
 
+
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, explosionRadius, collidedLayers);
+
         //Players (Need to check players first so LOS breaking is detected first)
         foreach (Collider2D collider in colliders) {
             GameObject hitObject = collider.gameObject;
 
             if (hitObject.CompareTag("Player")) {
-                
-                Debug.DrawRay(transform.position, hitObject.transform.position - transform.position, Color.red, 10f);
-                if (Physics2D.Raycast(transform.position, hitObject.transform.position - transform.position, Vector3.Distance(transform.position, hitObject.transform.position), blockLOSLayers)){
-                    Debug.Log("LOS blocked");
-                    break;
-                }
-                //If nothing blocking Line of sight kill player
-                Player player = hitObject.GetComponent<Player>();
+                if (IsServer){
+                    if (Physics2D.Raycast(transform.position, hitObject.transform.position - transform.position, Vector3.Distance(transform.position, hitObject.transform.position), blockLOSLayers)){
+                        Debug.Log("LOS blocked");
+                        break;
+                    }
+                    //If nothing blocking Line of sight kill player
+                    Player player = hitObject.GetComponent<Player>();
 
-                float damage = maxDamage*Vector3.Distance(player.transform.position, transform.position)/explosionRadius;
-                float damageClamped = Mathf.Clamp(damage, 0, 40);
-                player.TakeDamage(damageClamped);
+                    float damage = maxDamage*Vector3.Distance(player.transform.position, transform.position)/explosionRadius;
+                    float damageClamped = Mathf.Clamp(damage, 0, 40);
+                    TakeDamageServerRpc(player.GetNetworkObject(), damageClamped);
+                }
             }
         }
 
@@ -61,5 +63,17 @@ public class ExplosionCollider : NetworkBehaviour{
             }
 
         }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void TakeDamageServerRpc(NetworkObjectReference playerNetworkObjectReference, float damage){
+        TakeDamageClientRpc(playerNetworkObjectReference, damage);
+    }
+
+    [ClientRpc]
+    private void TakeDamageClientRpc(NetworkObjectReference playerNetworkObjectReference, float damage){
+        playerNetworkObjectReference.TryGet(out NetworkObject playerNetworkObject);
+        Player player = playerNetworkObject.GetComponent<Player>();
+        player.TakeDamage(damage);
     }
 }
