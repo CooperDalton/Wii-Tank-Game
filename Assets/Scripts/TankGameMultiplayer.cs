@@ -61,6 +61,36 @@ public class TankGameMultiplayer : NetworkBehaviour{
         }
     }
 
+    public void SpawnExplosionCollider(Transform explosionCollider, float x, float y, Player player){
+        int generalObjectIndex = GetGeneralObjectIndex(explosionCollider);
+        SpawnExplosionColliderServerRpc(generalObjectIndex, x,  y, player.GetNetworkObject());
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SpawnExplosionColliderServerRpc(int generalObjectIndex, float x, float y, NetworkObjectReference playerNetworkObjectReference){
+        playerNetworkObjectReference.TryGet(out NetworkObject playerNetworkObject);
+        Player player = playerNetworkObject.GetComponent<Player>();
+
+        Transform explosionColliderPrefab = generalObjectSOList.GeneralObjects[generalObjectIndex];
+
+        Transform explosionCollider = Instantiate(explosionColliderPrefab, new Vector2(x, y), Quaternion.identity);
+
+        NetworkObject explosionColliderNetworkObject = explosionCollider.GetComponent<NetworkObject>();
+        explosionColliderNetworkObject.Spawn(true);
+
+        SpawnExplosionColliderClientRpc(explosionColliderNetworkObject, playerNetworkObjectReference);
+    }
+
+    [ClientRpc]
+    private void SpawnExplosionColliderClientRpc(NetworkObjectReference explosionColliderNetworkObjectReference, NetworkObjectReference playerNetworkObjectReference){
+        explosionColliderNetworkObjectReference.TryGet(out NetworkObject bulletNetworkObject);
+        playerNetworkObjectReference.TryGet(out NetworkObject playerNetworkObject);
+
+        Player player = playerNetworkObject.GetComponent<Player>();
+        ExplosionCollider explosionCollider = bulletNetworkObject.GetComponent<ExplosionCollider>();
+        explosionCollider.SetPlayer(player);
+    }
+
     public void InflictDamage(Player player, float damage){
         InflictDamageServerRpc(player.GetNetworkObject(), damage);
     }
@@ -241,7 +271,7 @@ public class TankGameMultiplayer : NetworkBehaviour{
 
         bool validPos = false;
         Vector3 spawnPos = Vector3.zero;
-
+        float spawnRange = 10f;
 
         while (!validPos){
 
@@ -249,7 +279,7 @@ public class TankGameMultiplayer : NetworkBehaviour{
 
             validPos = true;
             foreach(Player player in GetAlivePlayers()){
-                if (Vector3.Distance(spawnPos, player.transform.position) < 5f){
+                if (Vector3.Distance(spawnPos, player.transform.position) < spawnRange){
                     validPos = false;
                     break;
                 }

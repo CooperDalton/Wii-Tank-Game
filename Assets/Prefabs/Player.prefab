@@ -750,6 +750,7 @@ MonoBehaviour:
   primaryFireSmoke: {fileID: 964369409130602526, guid: 392525e2c43be7c4ca964e5b3c66bf6a, type: 3}
   aliveContainer: {fileID: 2216723804801693149}
   deathExplosionEffect: {fileID: 964369409130602526, guid: c3ec935f02203b34d8e001385f3bf519, type: 3}
+  deathLocationPrefab: {fileID: 3601505231090403427, guid: e4ff32ed81c80284ab20dff8c9ed6a7b, type: 3}
   speed: 15
   maxHealth: 100
   shootingSpeed: 8

@@ -16,6 +16,7 @@ public class ExplosionCollider : NetworkBehaviour{
     [SerializeField] private Vector3[] directionsToBreakWallsList;
     [SerializeField] private float maxDamage;
     //[SerializeField] private Transform marker;
+    Player player;
 
     private void Awake() {
         Destroy(this, 1f);
@@ -39,10 +40,11 @@ public class ExplosionCollider : NetworkBehaviour{
                     }
                     //If nothing blocking Line of sight kill player
                     Player player = hitObject.GetComponent<Player>();
+                    HandlePlayerBulletCollisionsServerRpc(this.player.NetworkObject, player.NetworkObject);
 
                     float damage = maxDamage*Vector3.Distance(player.transform.position, transform.position)/explosionRadius;
                     float damageClamped = Mathf.Clamp(damage, 0, 40);
-                    TakeDamageServerRpc(player.GetNetworkObject(), damageClamped);
+                    TakeDamageRpc(player.GetNetworkObject(), damageClamped);
                 }
             }
         }
@@ -65,6 +67,29 @@ public class ExplosionCollider : NetworkBehaviour{
         }
     }
 
+    public void SetPlayer(Player player){
+        this.player = player;
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void TakeDamageRpc(NetworkObjectReference playerNetworkObjectReference, float damage){
+        playerNetworkObjectReference.TryGet(out NetworkObject playerNetworkObject);
+        Player player = playerNetworkObject.GetComponent<Player>();
+        player.TakeDamage(damage);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void HandlePlayerBulletCollisionsServerRpc(NetworkObjectReference bulletPlayerNetworkObjectReference, NetworkObjectReference hitPlayerNetworkObjectReference){
+        bulletPlayerNetworkObjectReference.TryGet(out NetworkObject bulletPlayerNetworkObject);
+        hitPlayerNetworkObjectReference.TryGet(out NetworkObject hitPlayerNetworkObject);
+
+        Player bulletPlayer = bulletPlayerNetworkObject.GetComponent<Player>();
+        Player hitPlayer = hitPlayerNetworkObject.GetComponent<Player>();
+        
+        hitPlayer.SetLastHitPlayer(bulletPlayer);
+    }
+
+    /*
     [ServerRpc(RequireOwnership = false)]
     private void TakeDamageServerRpc(NetworkObjectReference playerNetworkObjectReference, float damage){
         TakeDamageClientRpc(playerNetworkObjectReference, damage);
@@ -75,5 +100,5 @@ public class ExplosionCollider : NetworkBehaviour{
         playerNetworkObjectReference.TryGet(out NetworkObject playerNetworkObject);
         Player player = playerNetworkObject.GetComponent<Player>();
         player.TakeDamage(damage);
-    }
+    }*/
 }

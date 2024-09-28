@@ -68,12 +68,29 @@ public class Bullet : NetworkBehaviour
             if (IsServer && player != this.player){
                 TankGameMultiplayer.Instance.InflictDamage(player, damage);
                 TankGameMultiplayer.Instance.DestroyBullet(this);
+                HandlePlayerBulletCollisionsServerRpc(this.player.NetworkObject, player.NetworkObject);
             }
             return;
         }
     }
 
-    public void DestroySelf(){
+    [ServerRpc]
+    private void HandlePlayerBulletCollisionsServerRpc(NetworkObjectReference bulletPlayerNetworkObjectReference, NetworkObjectReference hitPlayerNetworkObjectReference){
+        HandlePlayerBulletCollisionsClientRpc(bulletPlayerNetworkObjectReference, hitPlayerNetworkObjectReference);
+    }
+
+    [ClientRpc]
+    private void HandlePlayerBulletCollisionsClientRpc(NetworkObjectReference bulletPlayerNetworkObjectReference, NetworkObjectReference hitPlayerNetworkObjectReference){
+        bulletPlayerNetworkObjectReference.TryGet(out NetworkObject bulletPlayerNetworkObject);
+        hitPlayerNetworkObjectReference.TryGet(out NetworkObject hitPlayerNetworkObject);
+
+        Player bulletPlayer = bulletPlayerNetworkObject.GetComponent<Player>();
+        Player hitPlayer = hitPlayerNetworkObject.GetComponent<Player>();
+        
+        hitPlayer.SetLastHitPlayer(bulletPlayer);
+    }
+
+    public virtual void DestroySelf(){
 
         if (player != null){
             ClearPlayerBulletClientRpc();

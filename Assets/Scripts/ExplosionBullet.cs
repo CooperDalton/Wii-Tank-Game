@@ -50,9 +50,9 @@ public class ExplosionBullet : Bullet
         }
     }
 
-    public new void DestroySelf(){
+    public override void DestroySelf(){
 
-        TankGameMultiplayer.Instance.SpawnGeneralObject(bulletDestroyParticles, transform.position.x, transform.position.y);
+        TankGameMultiplayer.Instance.SpawnExplosionCollider(bulletDestroyParticles, transform.position.x, transform.position.y, player);
         Destroy(gameObject);
     }
 }

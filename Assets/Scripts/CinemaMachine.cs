@@ -16,4 +16,8 @@ public class CinemaMachine : MonoBehaviour{
     public void SetPlayerToCamera(Player player){
         virtualCamera.Follow = player.transform;
     }
+
+    public void SetCameraToTransform(Transform transform){
+        virtualCamera.Follow = transform;
+    }
 }
