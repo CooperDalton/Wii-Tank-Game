@@ -429,7 +429,7 @@ MonoBehaviour:
   audioSource: {fileID: 4586773457183749109}
   soundEffects:
   - soundEffectName: AltFire
-    clip: {fileID: 8300000, guid: a8a3e965f02a58e4f845cd63f99a9207, type: 3}
+    clip: {fileID: 8300000, guid: f69b224c2fee21b4585f53189e0b7401, type: 3}
     volume: 0.15
 --- !u!1 &3947626717449467460
 GameObject:
@@ -717,7 +717,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2115217102
+  GlobalObjectIdHash: 3855314873
   InScenePlacedSourceGlobalObjectIdHash: 0
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1

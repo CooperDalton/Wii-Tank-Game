@@ -13,6 +13,7 @@ public class TankGameMultiplayer : NetworkBehaviour{
     
     public static TankGameMultiplayer Instance { get; private set; }
 
+    public event EventHandler OnPlayerDied;
     public event EventHandler<OnPlayerWonEventArgs> OnPlayerWon;
     public class OnPlayerWonEventArgs : EventArgs{
         public Player player;
@@ -256,6 +257,11 @@ public class TankGameMultiplayer : NetworkBehaviour{
         }
 
         return alivePlayers.ElementAt(index);
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    public void TriggerPlayerDiedEventRpc(){
+        OnPlayerDied?.Invoke(this, EventArgs.Empty);
     }
 
     public Player SpectatePlayerFromIndex(int index){

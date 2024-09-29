@@ -363,6 +363,7 @@ public class Player : NetworkBehaviour{
         
 
         if (IsOwner){
+            TankGameMultiplayer.Instance.TriggerPlayerDiedEventRpc();
             TankGameMultiplayer.Instance.SpawnGeneralObject(deathExplosionEffect, transform.position.x, transform.position.y);
             //Make temporary object so the camera looks at it while we teleport the player
             deathLocation = Instantiate(deathLocationPrefab, transform.position, Quaternion.identity);
