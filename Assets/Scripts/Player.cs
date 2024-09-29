@@ -76,12 +76,12 @@ public class Player : NetworkBehaviour{
         CinemaMachine.Instance.SetPlayerToCamera(this);
         canShoot = true;
 
-        transform.position = TankGameMultiplayer.Instance.GetSpawnPosition();
+        TeleportPlayerToValidSpawnLocation();
 
     }
 
     private void Update() {
-        if (!IsOwner) return;
+        if (!IsOwner || !GameManager.Instance.IsGamePlaying()) return;
         if (isAlive){
             //Player is Alive
             shootingTimer -= Time.deltaTime;
@@ -368,13 +368,19 @@ public class Player : NetworkBehaviour{
             //Make temporary object so the camera looks at it while we teleport the player
             deathLocation = Instantiate(deathLocationPrefab, transform.position, Quaternion.identity);
             CinemaMachine.Instance.SetCameraToTransform(deathLocation.transform);
-            transform.position = TankGameMultiplayer.Instance.GetSpawnPosition();
+            TeleportPlayerToValidSpawnLocation();
 
             lastHitPlayer.GiveKillCredit(this);
 
             RespawningUI.Instance.Show();
             StartCoroutine(RespawnTimer());
             rb.velocity = Vector3.zero;
+        }
+    }
+
+    public void TeleportPlayerToValidSpawnLocation(){
+        if (IsOwner){
+            transform.position = TankGameMultiplayer.Instance.GetSpawnPosition();
         }
     }
 
