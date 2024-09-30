@@ -15,12 +15,20 @@ public class Player : NetworkBehaviour{
     public class OnTookDamage : EventArgs {
         public float health;
     }
+    public event EventHandler<OnKilledPlayer> OnKilledPlayer;
+    public class OnKilledPlayer : EventArgs {
+        public string playerName;
+        public Color color;
+    }
+
+    public static Player LocalInstance { get; private set; }
 
 
     [Header("References")]
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private PlayerVisual playerVisual;
     [SerializeField] private GunShotPoint gunShotPoint;
+    [SerializeField] private PlayerNameTag playerNameTag;
     [SerializeField] private Transform headOrientation;
     [SerializeField] private Transform bodyOrientation;
     [SerializeField] private Transform gunShotPointTransform;
@@ -33,6 +41,7 @@ public class Player : NetworkBehaviour{
     [SerializeField] private Transform deathLocationPrefab;
 
     [Header("Settings")]
+    [SerializeField] private Vector3[] spawnLocations;
     [SerializeField] private float speed;
     [SerializeField] private float maxHealth;
     private float health;
@@ -62,6 +71,9 @@ public class Player : NetworkBehaviour{
         gunShotPoint.OnCollidedWithWall += GunShotPoint_OnCollidedWithWall;
         gunShotPoint.StoppedCollidingWithWall += GunShotPoint_StoppedCollidingWithWall;
         NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_OnClientDisconnected;
+
+        GameManager.Instance.OnGameOver += GameManager_OnGameOver;
+        GameManager.Instance.OnGameStarted += GameManager_OnGameStarted;
         
         TankGameMultiplayer.Instance.AddPlayer(this);
         isAlive = true;
@@ -94,39 +106,30 @@ public class Player : NetworkBehaviour{
             if (isShooting){
                 Shooting();
             }
-        } else{
-            //Player is Dead
-            HandleSpectate();
+        } 
+    }
+
+    public override void OnNetworkSpawn(){
+        if (IsOwner){
+            LocalInstance = this;
+        }
+        //Must change to player data index when we can
+        transform.position = spawnLocations[(int) OwnerClientId];
+    }
+
+    private void GameManager_OnGameStarted(object sender, EventArgs e){
+        //Set all the players names
+        if (!IsOwner) return;
+        foreach(Player player in TankGameMultiplayer.Instance.GetPlayers()){
+            if (player == this){
+                continue;
+            }
+            player.playerNameTag.SetText(TankGameMultiplayer.Instance.GetPlayerNameFromClientId(player.OwnerClientId), TankGameMultiplayer.Instance.GetColorFromId((int) player.OwnerClientId));
         }
     }
 
-    private void HandleSpectate()
-    {
-
-        //SPECTATE SYSTEM
-        /*
-        if (spectatePlayer != null){
-            CinemaMachine.Instance.SetPlayerToCamera(spectatePlayer);
-        }
-
-        Vector3 moveVector = GameInput.Instance.GetMovementVectorNormalized();
-
-        float xDir = moveVector.x;
-        if (prevXDir != xDir){
-            prevXDir = xDir;
-            if (xDir > 0){
-                Player nextSpectatePlayer = TankGameMultiplayer.Instance.GetNextSpectatePlayer(spectatePlayer, true);
-                if (nextSpectatePlayer != null){
-                    spectatePlayer = nextSpectatePlayer;
-                }
-            }
-            if (xDir < 0){
-                Player nextSpectatePlayer = TankGameMultiplayer.Instance.GetNextSpectatePlayer(spectatePlayer, false);
-                if (nextSpectatePlayer != null){
-                    spectatePlayer = nextSpectatePlayer;
-                }
-            }
-        } */
+    private void GameManager_OnGameOver(object sender, EventArgs e){
+        rb.velocity = Vector3.zero;
     }
 
     private void AltFire(object sender, EventArgs e){
@@ -363,14 +366,19 @@ public class Player : NetworkBehaviour{
         
 
         if (IsOwner){
+            if (lastHitPlayer != null){
+                lastHitPlayer.GiveKillCredit(this);
+                lastHitPlayer = null;
+            } else {
+                DecreaseNumberOfKillsSendToAllRpc();
+            }
+
             TankGameMultiplayer.Instance.TriggerPlayerDiedEventRpc();
             TankGameMultiplayer.Instance.SpawnGeneralObject(deathExplosionEffect, transform.position.x, transform.position.y);
             //Make temporary object so the camera looks at it while we teleport the player
             deathLocation = Instantiate(deathLocationPrefab, transform.position, Quaternion.identity);
             CinemaMachine.Instance.SetCameraToTransform(deathLocation.transform);
             TeleportPlayerToValidSpawnLocation();
-
-            lastHitPlayer.GiveKillCredit(this);
 
             RespawningUI.Instance.Show();
             StartCoroutine(RespawnTimer());
@@ -385,6 +393,7 @@ public class Player : NetworkBehaviour{
     }
 
     public void GiveKillCredit(Player player){
+        //Runs of player who got kill and player parameter is player who died
         KillCreditSendToAllRpc();
     }
 
@@ -394,6 +403,11 @@ public class Player : NetworkBehaviour{
         if (IsOwner){
             //Play visuals for the person who got the kill
         }
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void DecreaseNumberOfKillsSendToAllRpc(){
+        numKills--;
     }
 
     public bool IsAlive(){
@@ -413,6 +427,9 @@ public class Player : NetworkBehaviour{
         Respawn();
     }
 
+    public int GetNumberOfKills(){
+        return numKills;
+    }
 
     private void Respawn()
     {

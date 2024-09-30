@@ -10,10 +10,13 @@ using Mono.CSharp;
 
 public class TankGameMultiplayer : NetworkBehaviour{
 
-    
+    private const string PLAYER_NAME_PLAYER_PREFS = "PlayerName";
+
     public static TankGameMultiplayer Instance { get; private set; }
 
     public event EventHandler OnPlayerDied;
+    public event EventHandler OnPlayerDataNetworkListChanged;
+    public event EventHandler OnFailedToJoinGame;
     public event EventHandler<OnPlayerWonEventArgs> OnPlayerWon;
     public class OnPlayerWonEventArgs : EventArgs{
         public Player player;
@@ -22,11 +25,106 @@ public class TankGameMultiplayer : NetworkBehaviour{
     [SerializeField] private BulletList bulletList;
     [SerializeField] private GeneralObjectSOList generalObjectSOList;
     [SerializeField] private Vector3[] spawnLocations;
+    [SerializeField] private List<Color> playerColors;
 
     private List<Player> players = new List<Player>();
+    private NetworkList<PlayerData> playerDataNetworkList;
+    private string playerName;
 
     private void Awake() {
         Instance = this;
+
+        DontDestroyOnLoad(gameObject);
+
+        playerDataNetworkList = new NetworkList<PlayerData>();
+        playerDataNetworkList.OnListChanged += PlayerDataNetworkList_OnListChanged;
+    }
+
+    private void Start() {
+        playerName = PlayerPrefs.GetString(PLAYER_NAME_PLAYER_PREFS, "PlayerName" + UnityEngine.Random.Range(100, 10000));
+    }
+
+    private void PlayerDataNetworkList_OnListChanged(NetworkListEvent<PlayerData> changeEvent)
+    {
+        OnPlayerDataNetworkListChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void StartHost(){
+        NetworkManager.Singleton.ConnectionApprovalCallback += NetworkManager_ConnectionApprovalCallback;
+        NetworkManager.Singleton.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
+        NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_Server_OnClientDisconnectCallback;
+        NetworkManager.Singleton.StartHost();
+    }
+
+    private void NetworkManager_Server_OnClientDisconnectCallback(ulong clientId)
+    {
+        for (int i = 0; i < playerDataNetworkList.Count; i++){
+            PlayerData playerData = playerDataNetworkList[i];
+            if (playerData.clientId == clientId){
+                //Disconnected
+                playerDataNetworkList.RemoveAt(i);
+            }
+        }
+    }
+
+    private void NetworkManager_OnClientConnectedCallback(ulong clientId)
+    {
+        playerDataNetworkList.Add(new PlayerData {
+            clientId = clientId,
+            colorId = GetFirstUnusedColorId()
+        });
+        SetPlayerNameServerRpc(playerName);
+    }
+
+    private void NetworkManager_ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+    {
+        //This is where we test if someones request to join should be approved or denied
+        response.Approved = true;
+    }
+
+    [Rpc(SendTo.Server)]
+    private void SetPlayerNameServerRpc(string playerName, RpcParams RpcParams = default){
+        int playerDataIndex = GetPlayerDataIndexFromClientId(RpcParams.Receive.SenderClientId);
+
+        PlayerData playerData = playerDataNetworkList[playerDataIndex];
+
+        playerData.playerName = playerName;
+
+        playerDataNetworkList[playerDataIndex] = playerData;
+    }
+
+    private int GetPlayerDataIndexFromClientId(ulong clientId){
+        for (int i = 0; i < playerDataNetworkList.Count; i++){
+            if (playerDataNetworkList[i].clientId == clientId){
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private int GetFirstUnusedColorId(){
+        return playerDataNetworkList.Count;
+    }
+
+    public Color GetColorFromId(int id){
+        return playerColors[id];
+    }
+
+    public void StartClient(){
+        NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_Client_OnClientDisconnectCallback;
+        NetworkManager.Singleton.OnClientConnectedCallback += NetworkManager_Client_OnClientConnectedCallback;
+        NetworkManager.Singleton.StartClient();
+    }
+
+    private void NetworkManager_Client_OnClientConnectedCallback(ulong obj)
+    {
+        SetPlayerNameServerRpc(GetPlayerName());
+    }
+
+    private void NetworkManager_Client_OnClientDisconnectCallback(ulong obj)
+    {
+        OnFailedToJoinGame?.Invoke(this, EventArgs.Empty);
     }
 
     public void SpawnBullet(Transform bullet, float x, float y, float rotationZ, Player player, bool isNormalBullet){
@@ -294,5 +392,43 @@ public class TankGameMultiplayer : NetworkBehaviour{
         
         return spawnPos;
 
+    }
+
+    public List<ulong> GetClientIdsList(){
+        List<ulong> playerIds = new List<ulong>();
+        for (int i = 0; i < playerDataNetworkList.Count; i++){
+            playerIds.Add(playerDataNetworkList[i].clientId);
+        }
+
+        return playerIds;
+    }
+
+    public string GetPlayerNameFromClientId(ulong clientId){
+        for (int i = 0; i < playerDataNetworkList.Count; i++){
+            if (playerDataNetworkList[i].clientId == clientId){
+                return "" + playerDataNetworkList[i].playerName;
+            }
+        }
+
+        return "";
+    }
+
+    public Color GetColorFromName(string name){
+        for (int i = 0; i < playerDataNetworkList.Count; i++){
+            if (playerDataNetworkList[i].playerName == name){
+                return playerColors[playerDataNetworkList[i].colorId];
+            }
+        }
+
+        return Color.white;
+    }
+
+    public string GetPlayerName(){
+        return playerName;
+    }
+
+    public void SetPlayerName(string name){
+        PlayerPrefs.SetString(PLAYER_NAME_PLAYER_PREFS, name);
+        playerName = name;
     }
 }

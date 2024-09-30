@@ -14,13 +14,15 @@ public class NetworkUI : MonoBehaviour
     private void Awake() {
         startHostButton.onClick.AddListener(() =>{
             Debug.Log("Host");
-            NetworkManager.Singleton.StartHost();
+            TankGameMultiplayer.Instance.StartHost();
+            Loader.LoadNetwork(Loader.Scene.LobbyWaitingToStartScene);
             Hide();
         });
 
         startClientButton.onClick.AddListener(() =>{
             Debug.Log("Client");
-            NetworkManager.Singleton.StartClient();
+            TankGameMultiplayer.Instance.StartClient();
+            //Loader.LoadNetwork(Loader.Scene.LobbyWaitingToStartScene);
             Hide();
         });
     }

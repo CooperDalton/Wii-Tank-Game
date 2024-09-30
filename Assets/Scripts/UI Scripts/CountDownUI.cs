@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,20 +11,20 @@ public class CountDownUI : MonoBehaviour
     [SerializeField] private Animator anim;
     int oldNum = 0;
     int newNum;
-
-    private void Awake() {
-        GameManager.Instance.OnStateChanged += GameManager_OnStateChanged;
-    }
-
+    
     private void Start() {
+        GameManager.Instance.OnStateChanged += GameManager_OnStateChanged;
         Show();
     }
 
     private void Update() {
-        newNum = (int) GameManager.Instance.GetCountDownTimer();
+        if (!GameManager.Instance.IsCountDownToStart()){
+            return;
+        }
+        newNum = (int) GameManager.Instance.GetCountDownTimer() + 1;
         if (oldNum != newNum){
             oldNum = newNum;
-            anim.SetTrigger("NewNum");
+            anim.SetTrigger("NewNumber");
             countDownText.text = newNum.ToString();
         }
     }
