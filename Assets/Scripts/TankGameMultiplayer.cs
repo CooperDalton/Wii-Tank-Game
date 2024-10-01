@@ -389,8 +389,12 @@ public class TankGameMultiplayer : NetworkBehaviour{
                 }
             }
         }
-        
-        return spawnPos;
+        if (validPos){
+            return spawnPos;
+        } else{
+            Debug.LogError("Logic for finding spawnpos is wrong");
+            return Vector3.zero;
+        }
 
     }
 

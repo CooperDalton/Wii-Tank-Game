@@ -24,7 +24,6 @@ public class GameManager : NetworkBehaviour
     }
 
     private NetworkVariable<State> state = new NetworkVariable<State>(State.CountDownToStart);
-
     private float countDownTimerMax = 1.99f;
     private NetworkVariable<float> countDownTimer = new NetworkVariable<float>(1.99f);
     private float gameTimerMax = 120f;
@@ -86,6 +85,11 @@ public class GameManager : NetworkBehaviour
             playerTransform.GetComponent<NetworkObject>().SpawnAsPlayerObject(clientId, true);
         }
 
+        TriggerOnGameLoadedRpc();
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void TriggerOnGameLoadedRpc(){
         OnGameLoaded?.Invoke(this, EventArgs.Empty);
     }
 

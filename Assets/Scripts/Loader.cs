@@ -28,7 +28,6 @@ public static class Loader{
     }
 
     public static void LoaderCallBack(){
-        Debug.Log(targetScene.ToString());
         SceneManager.LoadScene(targetScene.ToString());
     }
 }

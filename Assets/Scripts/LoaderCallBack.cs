@@ -9,7 +9,6 @@ public class LoaderCallBack : MonoBehaviour{
     private void Update(){
         if (isFirstUpdate){
             isFirstUpdate = false;
-            Debug.Log("loadercallbackcalled");
             Loader.LoaderCallBack();
         }
     }

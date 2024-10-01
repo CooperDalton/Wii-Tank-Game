@@ -15,7 +15,7 @@ public class Player : NetworkBehaviour{
     public class OnTookDamage : EventArgs {
         public float health;
     }
-    public event EventHandler<OnKilledPlayer> OnKilledPlayer;
+    public event EventHandler<OnKilledPlayer> OnKilledPlayerEvent;
     public class OnKilledPlayer : EventArgs {
         public string playerName;
         public Color color;
@@ -80,16 +80,13 @@ public class Player : NetworkBehaviour{
     }
 
     private void Start() {
-        numKills = 0;
-
         circleCollider = GetComponent<CircleCollider2D>();
+        numKills = 0;
         health = maxHealth;
+
         if (!IsOwner) return;
         CinemaMachine.Instance.SetPlayerToCamera(this);
         canShoot = true;
-
-        TeleportPlayerToValidSpawnLocation();
-
     }
 
     private void Update() {
@@ -393,15 +390,23 @@ public class Player : NetworkBehaviour{
     }
 
     public void GiveKillCredit(Player player){
-        //Runs of player who got kill and player parameter is player who died
-        KillCreditSendToAllRpc();
+        //Runs on player who got kill and player parameter is player who died
+
+        KillCreditSendToAllRpc(player.NetworkObject);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    private void KillCreditSendToAllRpc(){
+    private void KillCreditSendToAllRpc(NetworkObjectReference playerNetworkObjectReference){
         numKills++;
         if (IsOwner){
+            playerNetworkObjectReference.TryGet(out NetworkObject playerNetworkObject);
+            Player player = playerNetworkObject.GetComponent<Player>();
+
             //Play visuals for the person who got the kill
+            OnKilledPlayerEvent?.Invoke(this, new OnKilledPlayer{
+                playerName = TankGameMultiplayer.Instance.GetPlayerNameFromClientId(player.OwnerClientId), 
+                color = TankGameMultiplayer.Instance.GetColorFromId((int) player.OwnerClientId)
+            });
         }
     }
 
