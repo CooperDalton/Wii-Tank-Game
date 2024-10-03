@@ -499,8 +499,8 @@ TextureImporter:
       name: TankGame_19
       rect:
         serializedVersion: 2
-        x: 128
-        y: 544
+        x: 0
+        y: 512
         width: 32
         height: 32
       alignment: 0
@@ -520,8 +520,8 @@ TextureImporter:
       name: TankGame_20
       rect:
         serializedVersion: 2
-        x: 160
-        y: 544
+        x: 32
+        y: 512
         width: 32
         height: 32
       alignment: 0
@@ -541,7 +541,7 @@ TextureImporter:
       name: TankGame_21
       rect:
         serializedVersion: 2
-        x: 0
+        x: 64
         y: 512
         width: 32
         height: 32
@@ -562,7 +562,7 @@ TextureImporter:
       name: TankGame_22
       rect:
         serializedVersion: 2
-        x: 32
+        x: 96
         y: 512
         width: 32
         height: 32
@@ -583,48 +583,6 @@ TextureImporter:
       name: TankGame_23
       rect:
         serializedVersion: 2
-        x: 64
-        y: 512
-        width: 32
-        height: 32
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: f73fbdefd232240438b80b87f7c7924f
-      internalID: -478819074
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: TankGame_24
-      rect:
-        serializedVersion: 2
-        x: 96
-        y: 512
-        width: 32
-        height: 32
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 0dcd0863be906c3418927eb862d50929
-      internalID: 876031232
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: TankGame_25
-      rect:
-        serializedVersion: 2
         x: 416
         y: 416
         width: 32
@@ -636,8 +594,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 559654f9b33e6ef4494fe3b9d97e69a7
-      internalID: 558745699
+      spriteID: f73fbdefd232240438b80b87f7c7924f
+      internalID: -478819074
       vertices: []
       indices: 
       edges: []
@@ -670,8 +628,6 @@ TextureImporter:
       TankGame_21: 635912191
       TankGame_22: -814609797
       TankGame_23: -478819074
-      TankGame_24: 876031232
-      TankGame_25: 558745699
       TankGame_3: -1175304535
       TankGame_4: 953634287
       TankGame_5: -1595306965

@@ -47,5 +47,13 @@ public class GameInput : MonoBehaviour
         return inputVector.normalized;
     }
 
+    private void OnDestroy(){
+        playerInputActions.Player.Fire.performed -= FirePerformed;
+        playerInputActions.Player.Fire.canceled -= FireCanceledPerformed;
+        playerInputActions.Player.AltFire.performed -= AltFirePerformed;
+
+        playerInputActions.Dispose();
+    }
+
 
 }

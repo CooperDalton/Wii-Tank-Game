@@ -17,7 +17,7 @@ public class HealthBar : MonoBehaviour{
     float healthVelocity = 0f;
 
     private void Start() {
-        player.OnDamaged += Player_OnDamaged;
+        player.OnHealthChanged += Player_OnDamaged;
         greenHealthBar.fillAmount = 1f;
         redDamageBar.fillAmount = 1f;
     }

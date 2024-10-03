@@ -5,6 +5,7 @@ using Unity.Netcode;
 using System;
 using Unity.VisualScripting;
 using UnityEngine.SceneManagement;
+using UnityEditor;
 
 public class GameManager : NetworkBehaviour
 {
@@ -26,8 +27,8 @@ public class GameManager : NetworkBehaviour
     private NetworkVariable<State> state = new NetworkVariable<State>(State.CountDownToStart);
     private float countDownTimerMax = 1.99f;
     private NetworkVariable<float> countDownTimer = new NetworkVariable<float>(1.99f);
-    private float gameTimerMax = 120f;
-    private NetworkVariable<float> gameTimer = new NetworkVariable<float>(120f);
+    private float gameTimerMax = 11f;
+    private NetworkVariable<float> gameTimer = new NetworkVariable<float>(11f);
     
 
     private void State_OnValueChanged(State previousValue, State newValue)
@@ -86,6 +87,22 @@ public class GameManager : NetworkBehaviour
         }
 
         TriggerOnGameLoadedRpc();
+    }
+
+    public void RestartGame(){
+        //Runs on server
+        state.Value = State.CountDownToStart;
+
+        RestartGameSendToAllRpc();
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void RestartGameSendToAllRpc(){
+        List<Player> players = TankGameMultiplayer.Instance.GetPlayers();
+
+        foreach(Player player in players){
+            player.RestartGame();
+        }
     }
 
     [Rpc(SendTo.ClientsAndHost)]

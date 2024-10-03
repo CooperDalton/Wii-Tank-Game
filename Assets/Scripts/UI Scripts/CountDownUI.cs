@@ -14,6 +14,7 @@ public class CountDownUI : MonoBehaviour
     
     private void Start() {
         GameManager.Instance.OnStateChanged += GameManager_OnStateChanged;
+        countDownText.text = ((int) GameManager.Instance.GetCountDownTimer()).ToString();
         Show();
     }
 

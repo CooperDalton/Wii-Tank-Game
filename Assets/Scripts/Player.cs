@@ -11,7 +11,7 @@ public class Player : NetworkBehaviour{
 
     public EventHandler OnShoot;
     public event EventHandler OnAltShoot;
-    public event EventHandler<OnTookDamage> OnDamaged;
+    public event EventHandler<OnTookDamage> OnHealthChanged;
     public class OnTookDamage : EventArgs {
         public float health;
     }
@@ -89,6 +89,31 @@ public class Player : NetworkBehaviour{
         canShoot = true;
     }
 
+    public override void OnNetworkSpawn(){
+        if (IsOwner){
+            LocalInstance = this;
+        }
+        //Must change to player data index when we can
+        transform.position = spawnLocations[(int) OwnerClientId];
+    }
+
+    public void RestartGame(){
+        //Happens on every player
+        numKills = 0;
+
+        if (IsOwner){
+            //Happens only on owner player
+            health = maxHealth;
+            canShoot = true;
+            OnHealthChanged?.Invoke(this, new OnTookDamage{
+                health = health
+            });
+
+            transform.position = spawnLocations[(int) OwnerClientId];
+            CinemaMachine.Instance.SetPlayerToCamera(this);
+        }
+    }
+
     private void Update() {
         if (!IsOwner || !GameManager.Instance.IsGamePlaying()) return;
         if (isAlive){
@@ -104,14 +129,6 @@ public class Player : NetworkBehaviour{
                 Shooting();
             }
         } 
-    }
-
-    public override void OnNetworkSpawn(){
-        if (IsOwner){
-            LocalInstance = this;
-        }
-        //Must change to player data index when we can
-        transform.position = spawnLocations[(int) OwnerClientId];
     }
 
     private void GameManager_OnGameStarted(object sender, EventArgs e){
@@ -314,7 +331,7 @@ public class Player : NetworkBehaviour{
         float damageShakeTime = Mathf.Clamp(damage/100, 0.1f, 0.5f);
         ShakeCamera(Mathf.Clamp(damage, 0, 40), damageShakeTime);
 
-        OnDamaged?.Invoke(this, new OnTookDamage{
+        OnHealthChanged?.Invoke(this, new OnTookDamage{
             health = health/maxHealth
         });
 
@@ -461,7 +478,7 @@ public class Player : NetworkBehaviour{
         isAlive = true;
         health = maxHealth;
 
-        OnDamaged?.Invoke(this, new OnTookDamage{
+        OnHealthChanged?.Invoke(this, new OnTookDamage{
             health = health/maxHealth
         });
         

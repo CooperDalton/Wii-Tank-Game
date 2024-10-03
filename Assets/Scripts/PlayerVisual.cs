@@ -14,10 +14,10 @@ public class PlayerVisual : NetworkBehaviour
     private void Start() {
         player.OnShoot += Player_OnShoot;
         player.OnAltShoot += Player_OnAltShoot;
-        player.OnDamaged += Player_OnDamaged;
+        player.OnHealthChanged += Player_OnHealthChanged;
     }
 
-    private void Player_OnDamaged(object sender, Player.OnTookDamage e)
+    private void Player_OnHealthChanged(object sender, Player.OnTookDamage e)
     {
         gunAnim.SetTrigger("TookDamage");
         bodyAnim.SetTrigger("TookDamage");

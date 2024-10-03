@@ -17,10 +17,6 @@ public class TankGameMultiplayer : NetworkBehaviour{
     public event EventHandler OnPlayerDied;
     public event EventHandler OnPlayerDataNetworkListChanged;
     public event EventHandler OnFailedToJoinGame;
-    public event EventHandler<OnPlayerWonEventArgs> OnPlayerWon;
-    public class OnPlayerWonEventArgs : EventArgs{
-        public Player player;
-    }
 
     [SerializeField] private BulletList bulletList;
     [SerializeField] private GeneralObjectSOList generalObjectSOList;
@@ -30,6 +26,7 @@ public class TankGameMultiplayer : NetworkBehaviour{
     private List<Player> players = new List<Player>();
     private NetworkList<PlayerData> playerDataNetworkList;
     private string playerName;
+    private ulong ServerPlayerClientId;
 
     private void Awake() {
         Instance = this;
@@ -58,6 +55,11 @@ public class TankGameMultiplayer : NetworkBehaviour{
 
     private void NetworkManager_Server_OnClientDisconnectCallback(ulong clientId)
     {
+        foreach(Player player in players){
+            if (player.OwnerClientId == clientId){
+                players.Remove(player);
+            }
+        }
         for (int i = 0; i < playerDataNetworkList.Count; i++){
             PlayerData playerData = playerDataNetworkList[i];
             if (playerData.clientId == clientId){
@@ -122,8 +124,13 @@ public class TankGameMultiplayer : NetworkBehaviour{
         SetPlayerNameServerRpc(GetPlayerName());
     }
 
-    private void NetworkManager_Client_OnClientDisconnectCallback(ulong obj)
+    private void NetworkManager_Client_OnClientDisconnectCallback(ulong clientId)
     {
+        foreach(Player player in players){
+            if (player.OwnerClientId == clientId){
+                players.Remove(player);
+            }
+        }
         OnFailedToJoinGame?.Invoke(this, EventArgs.Empty);
     }
 
@@ -191,6 +198,7 @@ public class TankGameMultiplayer : NetworkBehaviour{
     }
 
     public void InflictDamage(Player player, float damage){
+        if (GameManager.Instance.IsGameOver()) {return;}
         InflictDamageServerRpc(player.GetNetworkObject(), damage);
     }
 
@@ -434,5 +442,9 @@ public class TankGameMultiplayer : NetworkBehaviour{
     public void SetPlayerName(string name){
         PlayerPrefs.SetString(PLAYER_NAME_PLAYER_PREFS, name);
         playerName = name;
+    }
+
+    public ulong GetClientId(){
+        return NetworkManager.Singleton.LocalClientId;
     }
 }
