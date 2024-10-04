@@ -15,6 +15,7 @@ public class GameManager : NetworkBehaviour
     public event EventHandler OnGameStarted;
     public event EventHandler OnGameOver;
     public event EventHandler OnGameLoaded;
+    public event EventHandler OnGameRestarted;
 
     [SerializeField] private Transform playerPrefab;
 
@@ -27,8 +28,8 @@ public class GameManager : NetworkBehaviour
     private NetworkVariable<State> state = new NetworkVariable<State>(State.CountDownToStart);
     private float countDownTimerMax = 1.99f;
     private NetworkVariable<float> countDownTimer = new NetworkVariable<float>(1.99f);
-    private float gameTimerMax = 11f;
-    private NetworkVariable<float> gameTimer = new NetworkVariable<float>(11f);
+    private float gameTimerMax = 25f;
+    private NetworkVariable<float> gameTimer = new NetworkVariable<float>(25f);
     
 
     private void State_OnValueChanged(State previousValue, State newValue)
@@ -99,6 +100,7 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.ClientsAndHost)]
     private void RestartGameSendToAllRpc(){
         List<Player> players = TankGameMultiplayer.Instance.GetPlayers();
+        OnGameRestarted?.Invoke(this, EventArgs.Empty);
 
         foreach(Player player in players){
             player.RestartGame();

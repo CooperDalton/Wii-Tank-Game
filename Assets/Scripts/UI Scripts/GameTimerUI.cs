@@ -16,6 +16,8 @@ public class GameTimerUI : MonoBehaviour
         Hide();
 
         GameManager.Instance.OnStateChanged += GameManager_OnStateChanged;
+
+        gameTimerText.text = Math.Round(GameManager.Instance.GetGameTimer(),2).ToString();
     }
 
     private void GameManager_OnStateChanged(object sender, EventArgs e)

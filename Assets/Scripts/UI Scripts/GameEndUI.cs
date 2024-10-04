@@ -70,9 +70,11 @@ public class GameEndUI : MonoBehaviour
             foreach(Player player in TankGameMultiplayer.Instance.GetPlayers()){
                 if (player.OwnerClientId == clientId){
                     dict.Add(TankGameMultiplayer.Instance.GetPlayerNameFromClientId(clientId), player.GetNumberOfKills());
+                    Debug.Log(dict.Count);
                 }
             }
         }
+        Debug.Log("Final count" + dict.Count);
         //I don't know how this works but its supposed to sort the dict by values
         var sortedDict = dict.OrderBy(pair => pair.Value).ToDictionary(pair => pair.Key, pair => pair.Value);
 

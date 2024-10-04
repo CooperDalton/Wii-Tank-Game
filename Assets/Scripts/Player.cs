@@ -15,6 +15,11 @@ public class Player : NetworkBehaviour{
     public class OnTookDamage : EventArgs {
         public float health;
     }
+    public event EventHandler<OnNumMissiles> OnNumMissilesChanged;
+    public class OnNumMissiles : EventArgs {
+        public int numMissiles;
+    }
+
     public event EventHandler<OnKilledPlayer> OnKilledPlayerEvent;
     public class OnKilledPlayer : EventArgs {
         public string playerName;
@@ -39,10 +44,14 @@ public class Player : NetworkBehaviour{
     [SerializeField] private Transform aliveContainer;
     [SerializeField] private Transform deathExplosionEffect;
     [SerializeField] private Transform deathLocationPrefab;
+    [SerializeField] private Transform speedPowerUpParticleEffectPrefab;
+    [SerializeField] private Transform doubleShotRight;
+    [SerializeField] private Transform doubleShotLeft;
 
     [Header("Settings")]
     [SerializeField] private Vector3[] spawnLocations;
-    [SerializeField] private float speed;
+    [SerializeField] private float maxSpeed;
+    private float speed;
     [SerializeField] private float maxHealth;
     private float health;
     [SerializeField] private float shootingSpeed;
@@ -51,8 +60,16 @@ public class Player : NetworkBehaviour{
     private float shootingTimer;
     [SerializeField] private float turnSpeed;
 
+    [Header("Power Ups")]
+    [SerializeField] private float speedWithPowerUp;
+    [SerializeField] private float speedPowerUpTimerMax;
+    [SerializeField] private float healthPackAmount;
+    private float speedPowerUpTimer;
+    [SerializeField] private float doubleShotTimerMax;
+    private float doubleShotTimer = 0f;
+
     private bool isShooting;
-    private int numExplosionBullets = 9999;
+    private int numExplosionBullets = 0;
     private bool canShoot;
     private bool isAlive;
     //private float prevXDir = 0f;
@@ -61,25 +78,23 @@ public class Player : NetworkBehaviour{
     private int numKills;
     private Player lastHitPlayer;
 
-    //private Player spectatePlayer;
-    private List<Transform> bulletList = new List<Transform>();
-
     private void Awake() {
+        TankGameMultiplayer.Instance.AddPlayer(this);
+        isAlive = true;
+
+        gunShotPoint.OnCollidedWithWall += GunShotPoint_OnCollidedWithWall;
+        gunShotPoint.StoppedCollidingWithWall += GunShotPoint_StoppedCollidingWithWall;
+
         GameInput.Instance.OnShootAction += ShootStarted;
         GameInput.Instance.OnShootCanceledAction += ShootCanceled;
         GameInput.Instance.OnAltFireAction += AltFire;
-        gunShotPoint.OnCollidedWithWall += GunShotPoint_OnCollidedWithWall;
-        gunShotPoint.StoppedCollidingWithWall += GunShotPoint_StoppedCollidingWithWall;
-        NetworkManager.Singleton.OnClientDisconnectCallback += NetworkManager_OnClientDisconnected;
 
         GameManager.Instance.OnGameOver += GameManager_OnGameOver;
         GameManager.Instance.OnGameStarted += GameManager_OnGameStarted;
-        
-        TankGameMultiplayer.Instance.AddPlayer(this);
-        isAlive = true;
     }
 
     private void Start() {
+        speed = maxSpeed;
         circleCollider = GetComponent<CircleCollider2D>();
         numKills = 0;
         health = maxHealth;
@@ -100,6 +115,8 @@ public class Player : NetworkBehaviour{
     public void RestartGame(){
         //Happens on every player
         numKills = 0;
+        numExplosionBullets = 0;
+        OnNumMissilesChanged?.Invoke(this, new OnNumMissiles{numMissiles = numExplosionBullets}); //Update UI item
 
         if (IsOwner){
             //Happens only on owner player
@@ -119,7 +136,9 @@ public class Player : NetworkBehaviour{
         if (isAlive){
             //Player is Alive
             shootingTimer -= Time.deltaTime;
+            doubleShotTimer -= Time.deltaTime;
 
+            HandleSpeed();
             Vector3 moveVector = GameInput.Instance.GetMovementVectorNormalized();
             
             RotateOrientationToMouse();
@@ -129,6 +148,27 @@ public class Player : NetworkBehaviour{
                 Shooting();
             }
         } 
+    }
+
+    private void HandleSpeed(){
+        speedPowerUpTimer -= Time.deltaTime;
+
+        //Speed with Power Up
+        if(shootingTimer <= 0 && speedPowerUpTimer > 0 && !isShooting){
+            speed = speedWithPowerUp;
+            return;
+        } else if (speedPowerUpTimer > 0){
+            speed = 0.65f*speedWithPowerUp;
+            return;
+        }
+
+        //Speed without Power up
+        if (shootingTimer <= 0 && !isShooting){
+            speed = maxSpeed;
+        } else{
+            //Reduce speed while shooting
+            speed = 0.65f*maxSpeed;
+        }
     }
 
     private void GameManager_OnGameStarted(object sender, EventArgs e){
@@ -143,6 +183,7 @@ public class Player : NetworkBehaviour{
     }
 
     private void GameManager_OnGameOver(object sender, EventArgs e){
+        
         rb.velocity = Vector3.zero;
     }
 
@@ -151,8 +192,16 @@ public class Player : NetworkBehaviour{
 
         if (numExplosionBullets > 0){
             numExplosionBullets--;
-            TankGameMultiplayer.Instance.SpawnBullet(explosionBulletPrefab, gunShotPointTransform.position.x, gunShotPointTransform.position.y, headOrientation.rotation.eulerAngles.z, this, false);
-            TankGameMultiplayer.Instance.SpawnGeneralObjectWithParent(altFireSmoke, gunShotPointTransform.position.x, gunShotPointTransform.position.y, this, gunShotPointTransform.rotation.z);
+            OnNumMissilesChanged?.Invoke(this, new OnNumMissiles{
+                numMissiles = numExplosionBullets
+            });
+            if(doubleShotTimer > 0){
+                TankGameMultiplayer.Instance.SpawnBullet(explosionBulletPrefab, doubleShotLeft.position.x, doubleShotLeft.position.y, headOrientation.rotation.eulerAngles.z + 3, this, false);
+                TankGameMultiplayer.Instance.SpawnBullet(explosionBulletPrefab, doubleShotRight.position.x, doubleShotRight.position.y, headOrientation.rotation.eulerAngles.z - 3, this, false);
+            } else{
+                TankGameMultiplayer.Instance.SpawnBullet(explosionBulletPrefab, gunShotPointTransform.position.x, gunShotPointTransform.position.y, headOrientation.rotation.eulerAngles.z, this, false);
+            }
+            TankGameMultiplayer.Instance.SpawnGeneralObjectWithParent(altFireSmoke, gunShotPointTransform.position.x, gunShotPointTransform.position.y, this, gunShotPointTransform.rotation.z, false);
             
             OnAltShoot?.Invoke(this, EventArgs.Empty);
         }
@@ -160,26 +209,19 @@ public class Player : NetworkBehaviour{
 
     private void Shooting(){
         float timeTillShot = 1 / shootingSpeed;
-        if (shootingTimer <= 0 && bulletList.Count < numberOfBullets && canShoot) {
+        if (shootingTimer <= 0 && canShoot) {
             shootingTimer = timeTillShot;
-            TankGameMultiplayer.Instance.SpawnBullet(bulletPrefab, gunShotPointTransform.position.x, gunShotPointTransform.position.y, headOrientation.rotation.eulerAngles.z, this, true);
-            TankGameMultiplayer.Instance.SpawnGeneralObjectWithParent(primaryFireSmoke, gunShotPointTransform.position.x, gunShotPointTransform.position.y, this, gunShotPointTransform.rotation.z);
+            if(doubleShotTimer > 0){
+                TankGameMultiplayer.Instance.SpawnBullet(bulletPrefab, doubleShotLeft.position.x, doubleShotLeft.position.y, headOrientation.rotation.eulerAngles.z + 2, this, true);
+                TankGameMultiplayer.Instance.SpawnBullet(bulletPrefab, doubleShotRight.position.x, doubleShotRight.position.y, headOrientation.rotation.eulerAngles.z - 2, this, true);
+            } else{
+                TankGameMultiplayer.Instance.SpawnBullet(bulletPrefab, gunShotPointTransform.position.x, gunShotPointTransform.position.y, headOrientation.rotation.eulerAngles.z, this, true);
+            }
+
+            TankGameMultiplayer.Instance.SpawnGeneralObjectWithParent(primaryFireSmoke, gunShotPointTransform.position.x, gunShotPointTransform.position.y, this, gunShotPointTransform.rotation.z, false);
 
             OnShoot?.Invoke(this, EventArgs.Empty);
         }
-    }
-
-    private void NetworkManager_OnClientDisconnected(ulong obj)
-    {
-        TankGameMultiplayer.Instance.RemovePlayer(this);
-    }
-
-    public void AddBullet(Transform bullet){
-        bulletList.Insert(0, bullet);
-    }
-
-    public void RemoveBullet(Transform bullet){
-        bulletList.Remove(bullet);
     }
 
     private void HandleMovement(Vector3 moveVector){
@@ -310,7 +352,7 @@ public class Player : NetworkBehaviour{
     }
 
     public void IncreaseMovementSpead(float speed){
-        this.speed += speed;
+        this.maxSpeed += speed;
     }
 
     public void IncreaseBulletSpeed(float speed){
@@ -339,6 +381,39 @@ public class Player : NetworkBehaviour{
             Die();
         }
     }
+
+    /*#region
+    /###########POWER UP ###########
+    /###########SECTION ############
+    */
+
+    public void MissilePowerUp(){
+        numExplosionBullets++;
+        OnNumMissilesChanged?.Invoke(this, new OnNumMissiles{numMissiles = numExplosionBullets});
+
+        //Do some kind of effect will play on all clients I think
+    }
+
+    public void SpeedPowerUp(){
+        speedPowerUpTimer = speedPowerUpTimerMax;
+
+        TankGameMultiplayer.Instance.SpawnGeneralObjectWithParent(speedPowerUpParticleEffectPrefab, transform.position.x, transform.position.y, this, 0f, true);
+    }
+
+    public void HealthPowerUp(){
+        health = Mathf.Min(health + healthPackAmount, 100);
+
+        OnHealthChanged?.Invoke(this, new OnTookDamage{
+            health = health/maxHealth
+        });
+    }
+
+    public void DoubleShotPowerUp(){
+        Debug.Log("double shot was powered up");
+        doubleShotTimer = doubleShotTimerMax;
+    }
+
+    //#endregion
 
     private void DeactiveBody(){
         DeactiveBodyServerRpc();
@@ -416,6 +491,10 @@ public class Player : NetworkBehaviour{
     private void KillCreditSendToAllRpc(NetworkObjectReference playerNetworkObjectReference){
         numKills++;
         if (IsOwner){
+            //Runs only on player who got kill's client and on that player
+            numExplosionBullets++;
+            OnNumMissilesChanged?.Invoke(this, new OnNumMissiles{numMissiles = numExplosionBullets});
+
             playerNetworkObjectReference.TryGet(out NetworkObject playerNetworkObject);
             Player player = playerNetworkObject.GetComponent<Player>();
 
@@ -486,5 +565,10 @@ public class Player : NetworkBehaviour{
         aliveContainer.gameObject.SetActive(true);
         circleCollider.enabled = true;
 
+    }
+
+    public override void OnDestroy(){
+        GameManager.Instance.OnGameOver -= GameManager_OnGameOver;
+        GameManager.Instance.OnGameStarted -= GameManager_OnGameStarted;
     }
 }

@@ -81,30 +81,21 @@ public class Bullet : NetworkBehaviour
 
     [ClientRpc]
     private void HandlePlayerBulletCollisionsClientRpc(NetworkObjectReference bulletPlayerNetworkObjectReference, NetworkObjectReference hitPlayerNetworkObjectReference){
-        bulletPlayerNetworkObjectReference.TryGet(out NetworkObject bulletPlayerNetworkObject);
+        if (!bulletPlayerNetworkObjectReference.TryGet(out NetworkObject bulletPlayerNetworkObject)){
+            return;
+        }
         hitPlayerNetworkObjectReference.TryGet(out NetworkObject hitPlayerNetworkObject);
 
-        Player bulletPlayer = bulletPlayerNetworkObject.GetComponent<Player>();
         Player hitPlayer = hitPlayerNetworkObject.GetComponent<Player>();
+        if (bulletPlayerNetworkObject.TryGetComponent(out Player bulletPlayer)){
+            hitPlayer.SetLastHitPlayer(bulletPlayer);
+        }
         
-        hitPlayer.SetLastHitPlayer(bulletPlayer);
     }
 
     public virtual void DestroySelf(){
-
-        if (player != null){
-            ClearPlayerBulletClientRpc();
-        } else {
-            Debug.Log("No player found");
-        }
-
         TankGameMultiplayer.Instance.SpawnGeneralObject(bulletDestroyParticles, transform.position.x, transform.position.y);
         Destroy(gameObject);
-    }
-
-    [ClientRpc]
-    private void ClearPlayerBulletClientRpc(){
-        player.RemoveBullet(transform);
     }
 
     public NetworkObject GetNetworkObject(){

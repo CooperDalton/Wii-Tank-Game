@@ -40,7 +40,9 @@ public class ExplosionCollider : NetworkBehaviour{
                     }
                     //If nothing blocking Line of sight kill player
                     Player player = hitObject.GetComponent<Player>();
-                    HandlePlayerBulletCollisionsServerRpc(this.player.NetworkObject, player.NetworkObject);
+                    if (this.player != null){
+                        HandlePlayerBulletCollisionsServerRpc(this.player.NetworkObject, player.NetworkObject);
+                    }
 
                     float damage = maxDamage*Vector3.Distance(player.transform.position, transform.position)/explosionRadius;
                     float damageClamped = Mathf.Clamp(damage, 0, 40);

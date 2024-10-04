@@ -583,8 +583,8 @@ TextureImporter:
       name: TankGame_23
       rect:
         serializedVersion: 2
-        x: 416
-        y: 416
+        x: 0
+        y: 480
         width: 32
         height: 32
       alignment: 0
@@ -596,6 +596,90 @@ TextureImporter:
       bones: []
       spriteID: f73fbdefd232240438b80b87f7c7924f
       internalID: -478819074
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TankGame_24
+      rect:
+        serializedVersion: 2
+        x: 32
+        y: 480
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d32b11dc8c67b0d41be8e5ac01e3fd58
+      internalID: -1085091028
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TankGame_25
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 480
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 08c08c407a37662498c66610c9b5b12a
+      internalID: 984953814
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TankGame_26
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 480
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b591fc3f0034b2e4c95ca0511debb734
+      internalID: -1916650734
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: TankGame_27
+      rect:
+        serializedVersion: 2
+        x: 416
+        y: 416
+        width: 32
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cfd436481a0eff64c915d15609a73711
+      internalID: 1675328129
       vertices: []
       indices: 
       edges: []
@@ -628,6 +712,10 @@ TextureImporter:
       TankGame_21: 635912191
       TankGame_22: -814609797
       TankGame_23: -478819074
+      TankGame_24: -1085091028
+      TankGame_25: 984953814
+      TankGame_26: -1916650734
+      TankGame_27: 1675328129
       TankGame_3: -1175304535
       TankGame_4: 953634287
       TankGame_5: -1595306965

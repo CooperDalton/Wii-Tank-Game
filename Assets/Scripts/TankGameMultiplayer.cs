@@ -55,11 +55,8 @@ public class TankGameMultiplayer : NetworkBehaviour{
 
     private void NetworkManager_Server_OnClientDisconnectCallback(ulong clientId)
     {
-        foreach(Player player in players){
-            if (player.OwnerClientId == clientId){
-                players.Remove(player);
-            }
-        }
+        RemovePlayerWithClientIdRpc(clientId);
+
         for (int i = 0; i < playerDataNetworkList.Count; i++){
             PlayerData playerData = playerDataNetworkList[i];
             if (playerData.clientId == clientId){
@@ -67,6 +64,12 @@ public class TankGameMultiplayer : NetworkBehaviour{
                 playerDataNetworkList.RemoveAt(i);
             }
         }
+        
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    private void RemovePlayerWithClientIdRpc(ulong clientId){
+        RemovePlayer(GetPlayerFromClientId(clientId));
     }
 
     private void NetworkManager_OnClientConnectedCallback(ulong clientId)
@@ -126,11 +129,6 @@ public class TankGameMultiplayer : NetworkBehaviour{
 
     private void NetworkManager_Client_OnClientDisconnectCallback(ulong clientId)
     {
-        foreach(Player player in players){
-            if (player.OwnerClientId == clientId){
-                players.Remove(player);
-            }
-        }
         OnFailedToJoinGame?.Invoke(this, EventArgs.Empty);
     }
 
@@ -162,9 +160,6 @@ public class TankGameMultiplayer : NetworkBehaviour{
         Player player = playerNetworkObject.GetComponent<Player>();
         Bullet bullet = bulletNetworkObject.GetComponent<Bullet>();
         bullet.SetPlayer(player);
-        if (isNormalBullet){
-            player.AddBullet(bullet.transform);
-        }
     }
 
     public void SpawnExplosionCollider(Transform explosionCollider, float x, float y, Player player){
@@ -174,9 +169,6 @@ public class TankGameMultiplayer : NetworkBehaviour{
 
     [ServerRpc(RequireOwnership = false)]
     private void SpawnExplosionColliderServerRpc(int generalObjectIndex, float x, float y, NetworkObjectReference playerNetworkObjectReference){
-        playerNetworkObjectReference.TryGet(out NetworkObject playerNetworkObject);
-        Player player = playerNetworkObject.GetComponent<Player>();
-
         Transform explosionColliderPrefab = generalObjectSOList.GeneralObjects[generalObjectIndex];
 
         Transform explosionCollider = Instantiate(explosionColliderPrefab, new Vector2(x, y), Quaternion.identity);
@@ -190,11 +182,21 @@ public class TankGameMultiplayer : NetworkBehaviour{
     [ClientRpc]
     private void SpawnExplosionColliderClientRpc(NetworkObjectReference explosionColliderNetworkObjectReference, NetworkObjectReference playerNetworkObjectReference){
         explosionColliderNetworkObjectReference.TryGet(out NetworkObject bulletNetworkObject);
-        playerNetworkObjectReference.TryGet(out NetworkObject playerNetworkObject);
 
-        Player player = playerNetworkObject.GetComponent<Player>();
         ExplosionCollider explosionCollider = bulletNetworkObject.GetComponent<ExplosionCollider>();
+        
+        if (!playerNetworkObjectReference.TryGet(out NetworkObject playerNetworkObject)){
+            explosionCollider.SetPlayer(null);
+            return;
+        }
+        if(!playerNetworkObject.TryGetComponent<Player>(out Player player)){
+            //Player has disconnected
+            explosionCollider.SetPlayer(null);
+            return;
+        }
+
         explosionCollider.SetPlayer(player);
+        
     }
 
     public void InflictDamage(Player player, float damage){
@@ -230,13 +232,13 @@ public class TankGameMultiplayer : NetworkBehaviour{
 
     }
 
-    public void SpawnGeneralObjectWithParent(Transform generalObject, float x, float y, Player player, float rotation){
+    public void SpawnGeneralObjectWithParent(Transform generalObject, float x, float y, Player player, float rotation, bool playerBody){
         int generalObjectIndex = GetGeneralObjectIndex(generalObject);
-        SpawnGeneralObjectWithParentServerRpc(generalObjectIndex, x, y, player.GetNetworkObject(), rotation);
+        SpawnGeneralObjectWithParentServerRpc(generalObjectIndex, x, y, player.GetNetworkObject(), rotation, playerBody);
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void SpawnGeneralObjectWithParentServerRpc(int generalObjectIndex, float x, float y, NetworkObjectReference playerNetworkObjectReference, float rotation){
+    private void SpawnGeneralObjectWithParentServerRpc(int generalObjectIndex, float x, float y, NetworkObjectReference playerNetworkObjectReference, float rotation, bool playerBody){
         Transform generalObjectPrefab = GetGeneralObjectFromIndex(generalObjectIndex);
         playerNetworkObjectReference.TryGet(out NetworkObject playerNetworkObject);
         Player player = playerNetworkObject.GetComponent<Player>();
@@ -247,20 +249,24 @@ public class TankGameMultiplayer : NetworkBehaviour{
         generalObjectNetworkObject.Spawn(true);
 
         if (generalObject.TryGetComponent(out FollowParent followParent)){
-            GeneralObjectSetParentClientRpc(playerNetworkObject, followParent.GetNetworkObject());
+            GeneralObjectSetParentClientRpc(playerNetworkObject, followParent.GetNetworkObject(), playerBody);
         }
 
     }
 
     [ClientRpc]
-    private void GeneralObjectSetParentClientRpc(NetworkObjectReference playerNetworkBehaviourReference, NetworkObjectReference followParentNetworkBehaviourReference){
+    private void GeneralObjectSetParentClientRpc(NetworkObjectReference playerNetworkBehaviourReference, NetworkObjectReference followParentNetworkBehaviourReference, bool playerBody){
         playerNetworkBehaviourReference.TryGet(out NetworkObject playerNetworkObject);
         Player player = playerNetworkObject.GetComponent<Player>();
         
         followParentNetworkBehaviourReference.TryGet(out NetworkObject followParentNetworkObject);
         FollowParent followParent = followParentNetworkObject.GetComponent<FollowParent>();
 
-        followParent.SetParent(player.getGunShotTransform());
+        if (playerBody){
+            followParent.SetParent(player.transform);
+        } else{
+            followParent.SetParent(player.getGunShotTransform());
+        }
     }
 
     public void DestroyGeneralObject(IGeneralObject generalObject){
@@ -413,6 +419,17 @@ public class TankGameMultiplayer : NetworkBehaviour{
         }
 
         return playerIds;
+    }
+
+    public Player GetPlayerFromClientId(ulong clientId){
+        
+        foreach(Player player in players){
+            if (player.OwnerClientId == clientId){
+                return player;
+            }
+        }
+        
+        return null;
     }
 
     public string GetPlayerNameFromClientId(ulong clientId){

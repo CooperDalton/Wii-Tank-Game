@@ -11,16 +11,22 @@ public class PlayerVisual : NetworkBehaviour
     [SerializeField] private Animator gunAnim;
     [SerializeField] private Animator bodyAnim;
 
+    private float health;
+
     private void Start() {
         player.OnShoot += Player_OnShoot;
         player.OnAltShoot += Player_OnAltShoot;
         player.OnHealthChanged += Player_OnHealthChanged;
+
+        health = 100f;
     }
 
     private void Player_OnHealthChanged(object sender, Player.OnTookDamage e)
     {
-        gunAnim.SetTrigger("TookDamage");
-        bodyAnim.SetTrigger("TookDamage");
+        if (e.health < health){
+            gunAnim.SetTrigger("TookDamage");
+            bodyAnim.SetTrigger("TookDamage");
+        }
     }
 
     private void Player_OnAltShoot(object sender, EventArgs e)

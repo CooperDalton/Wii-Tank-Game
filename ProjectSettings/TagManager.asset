@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Bullet
   - Explosion
+  - PowerUp
   layers:
   - Default
   - TransparentFX
@@ -16,7 +17,7 @@ TagManager:
   - Player
   - Wall
   - BreakableWall
-  - 
+  - PowerUp
   - 
   - 
   - 
