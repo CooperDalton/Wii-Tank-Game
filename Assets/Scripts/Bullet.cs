@@ -16,6 +16,7 @@ public class Bullet : NetworkBehaviour
     [SerializeField] private protected Transform bulletDestroyParticles;
     [SerializeField] private Collider2D circleCollider;
     [SerializeField] private float damage;
+    [SerializeField] private AudioSource bounceSound;
     private protected int bouncesLeft;
 
 
@@ -39,7 +40,18 @@ public class Bullet : NetworkBehaviour
         //Detecting Collisions With Walls
         if (other.gameObject.layer == LayerMask.NameToLayer("Wall") || other.gameObject.layer == LayerMask.NameToLayer("BreakableWall")) {
             //Reduces bounces after colliding with wall
+            float bulletBounceVolume = 0.3f;
+            bounceSound.volume = bulletBounceVolume * OptionsUI.Instance.GetMasterVolume();
+            bounceSound.Play();
             bouncesLeft--;
+
+            float rotation = transform.rotation.eulerAngles.z;
+            Vector2 directionVector = transform.up;
+
+            Vector2 bounceVector = Vector2.Reflect(directionVector, other.contacts[0].normal);
+            float newAngle = Mathf.Atan2(bounceVector.y, bounceVector.x) * Mathf.Rad2Deg - 90f;
+
+            transform.rotation = Quaternion.Euler(0,0,newAngle);
 
             if (bouncesLeft < 0) {
                 if (IsServer){

@@ -15,10 +15,14 @@ public class ExplosionCollider : NetworkBehaviour{
     [SerializeField] private float timeShake;
     [SerializeField] private Vector3[] directionsToBreakWallsList;
     [SerializeField] private float maxDamage;
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private float explosionVolume;
     //[SerializeField] private Transform marker;
     Player player;
 
     private void Awake() {
+        audioSource.volume = explosionVolume * OptionsUI.Instance.GetMasterVolume();
+
         Destroy(this, 1f);
     }
 
@@ -45,7 +49,7 @@ public class ExplosionCollider : NetworkBehaviour{
                     }
 
                     float damage = maxDamage*Vector3.Distance(player.transform.position, transform.position)/explosionRadius;
-                    float damageClamped = Mathf.Clamp(damage, 0, 40);
+                    float damageClamped = Mathf.Clamp(damage, 0, maxDamage);
                     TakeDamageRpc(player.GetNetworkObject(), damageClamped);
                 }
             }

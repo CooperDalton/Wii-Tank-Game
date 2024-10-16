@@ -29,7 +29,9 @@ public class GameInput : MonoBehaviour
 
     private void AltFirePerformed(InputAction.CallbackContext context)
     {
-        OnAltFireAction?.Invoke(this, EventArgs.Empty);
+        if (OptionsUI.Instance.isActive == false){
+            OnAltFireAction?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     private void FireCanceledPerformed(InputAction.CallbackContext context)
@@ -39,7 +41,9 @@ public class GameInput : MonoBehaviour
 
     private void FirePerformed(InputAction.CallbackContext context)
     {
-        OnShootAction?.Invoke(this, EventArgs.Empty);
+        if (OptionsUI.Instance.isActive == false){
+            OnShootAction?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     public Vector2 GetMovementVectorNormalized(){

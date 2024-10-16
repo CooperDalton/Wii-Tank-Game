@@ -14,9 +14,9 @@ public class MainMenuCleanUp : MonoBehaviour{
             Destroy(TankGameMultiplayer.Instance.gameObject);
         }
 
-        //if (KitchenGameLobby.Instance != null){
-        //    Destroy(KitchenGameLobby.Instance.gameObject);
-        //}
+        if (TankGameLobby.Instance != null){
+            Destroy(TankGameLobby.Instance.gameObject);
+        }
     }
 
 }

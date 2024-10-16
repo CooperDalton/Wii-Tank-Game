@@ -19,12 +19,17 @@ public class Player : NetworkBehaviour{
     public class OnNumMissiles : EventArgs {
         public int numMissiles;
     }
-
     public event EventHandler<OnKilledPlayer> OnKilledPlayerEvent;
     public class OnKilledPlayer : EventArgs {
         public string playerName;
         public Color color;
     }
+
+    //PowerUp Events
+    public event EventHandler OnHealthPowerUp;
+    public event EventHandler OnMissilePowerUp;
+    public event EventHandler OnDoubleShotPowerUp;
+    public event EventHandler OnSpeedPowerUp;
 
     public static Player LocalInstance { get; private set; }
 
@@ -114,6 +119,9 @@ public class Player : NetworkBehaviour{
 
     public void RestartGame(){
         //Happens on every player
+
+        speedPowerUpTimer = 0f;
+        doubleShotTimer = 0;
         numKills = 0;
         numExplosionBullets = 0;
         OnNumMissilesChanged?.Invoke(this, new OnNumMissiles{numMissiles = numExplosionBullets}); //Update UI item
@@ -195,6 +203,9 @@ public class Player : NetworkBehaviour{
             OnNumMissilesChanged?.Invoke(this, new OnNumMissiles{
                 numMissiles = numExplosionBullets
             });
+
+            OnAltShoot?.Invoke(this, EventArgs.Empty);
+
             if(doubleShotTimer > 0){
                 TankGameMultiplayer.Instance.SpawnBullet(explosionBulletPrefab, doubleShotLeft.position.x, doubleShotLeft.position.y, headOrientation.rotation.eulerAngles.z + 3, this, false);
                 TankGameMultiplayer.Instance.SpawnBullet(explosionBulletPrefab, doubleShotRight.position.x, doubleShotRight.position.y, headOrientation.rotation.eulerAngles.z - 3, this, false);
@@ -202,8 +213,6 @@ public class Player : NetworkBehaviour{
                 TankGameMultiplayer.Instance.SpawnBullet(explosionBulletPrefab, gunShotPointTransform.position.x, gunShotPointTransform.position.y, headOrientation.rotation.eulerAngles.z, this, false);
             }
             TankGameMultiplayer.Instance.SpawnGeneralObjectWithParent(altFireSmoke, gunShotPointTransform.position.x, gunShotPointTransform.position.y, this, gunShotPointTransform.rotation.z, false);
-            
-            OnAltShoot?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -211,6 +220,9 @@ public class Player : NetworkBehaviour{
         float timeTillShot = 1 / shootingSpeed;
         if (shootingTimer <= 0 && canShoot) {
             shootingTimer = timeTillShot;
+
+            OnShoot?.Invoke(this, EventArgs.Empty);
+
             if(doubleShotTimer > 0){
                 TankGameMultiplayer.Instance.SpawnBullet(bulletPrefab, doubleShotLeft.position.x, doubleShotLeft.position.y, headOrientation.rotation.eulerAngles.z + 2, this, true);
                 TankGameMultiplayer.Instance.SpawnBullet(bulletPrefab, doubleShotRight.position.x, doubleShotRight.position.y, headOrientation.rotation.eulerAngles.z - 2, this, true);
@@ -219,8 +231,6 @@ public class Player : NetworkBehaviour{
             }
 
             TankGameMultiplayer.Instance.SpawnGeneralObjectWithParent(primaryFireSmoke, gunShotPointTransform.position.x, gunShotPointTransform.position.y, this, gunShotPointTransform.rotation.z, false);
-
-            OnShoot?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -388,6 +398,7 @@ public class Player : NetworkBehaviour{
     */
 
     public void MissilePowerUp(){
+        OnMissilePowerUp?.Invoke(this, EventArgs.Empty);
         numExplosionBullets++;
         OnNumMissilesChanged?.Invoke(this, new OnNumMissiles{numMissiles = numExplosionBullets});
 
@@ -395,12 +406,14 @@ public class Player : NetworkBehaviour{
     }
 
     public void SpeedPowerUp(){
+        OnSpeedPowerUp?.Invoke(this, EventArgs.Empty);
         speedPowerUpTimer = speedPowerUpTimerMax;
 
         TankGameMultiplayer.Instance.SpawnGeneralObjectWithParent(speedPowerUpParticleEffectPrefab, transform.position.x, transform.position.y, this, 0f, true);
     }
 
     public void HealthPowerUp(){
+        OnHealthPowerUp?.Invoke(this, EventArgs.Empty);
         health = Mathf.Min(health + healthPackAmount, 100);
 
         OnHealthChanged?.Invoke(this, new OnTookDamage{
@@ -409,7 +422,7 @@ public class Player : NetworkBehaviour{
     }
 
     public void DoubleShotPowerUp(){
-        Debug.Log("double shot was powered up");
+        OnDoubleShotPowerUp?.Invoke(this, EventArgs.Empty);
         doubleShotTimer = doubleShotTimerMax;
     }
 

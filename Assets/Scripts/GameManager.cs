@@ -26,10 +26,10 @@ public class GameManager : NetworkBehaviour
     }
 
     private NetworkVariable<State> state = new NetworkVariable<State>(State.CountDownToStart);
-    private float countDownTimerMax = 1.99f;
-    private NetworkVariable<float> countDownTimer = new NetworkVariable<float>(1.99f);
-    private float gameTimerMax = 25f;
-    private NetworkVariable<float> gameTimer = new NetworkVariable<float>(25f);
+    private float countDownTimerMax = 4.99f;
+    private NetworkVariable<float> countDownTimer = new NetworkVariable<float>(4.99f);
+    private float gameTimerMax = 150f;
+    private NetworkVariable<float> gameTimer = new NetworkVariable<float>(150f);
     
 
     private void State_OnValueChanged(State previousValue, State newValue)

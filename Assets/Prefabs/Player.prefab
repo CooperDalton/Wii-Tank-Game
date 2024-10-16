@@ -477,7 +477,37 @@ MonoBehaviour:
   audioSource: {fileID: 4586773457183749109}
   soundEffects:
   - soundEffectName: AltFire
-    clip: {fileID: 8300000, guid: f69b224c2fee21b4585f53189e0b7401, type: 3}
+    clip: {fileID: 8300000, guid: 94a313fcc2b9a3041aaae2930668abaa, type: 3}
+    volume: 0.15
+  - soundEffectName: PrimaryFire1
+    clip: {fileID: 8300000, guid: 4cdbf690f7f914d4aaac4fcdf3069b44, type: 3}
+    volume: 0.15
+  - soundEffectName: PrimaryFire2
+    clip: {fileID: 8300000, guid: f6e454de645d172488b1376b2ce5c263, type: 3}
+    volume: 0.15
+  - soundEffectName: PrimaryFire3
+    clip: {fileID: 8300000, guid: d8c339b7a22be364298470bf9ca7125f, type: 3}
+    volume: 0.15
+  - soundEffectName: PrimaryFire4
+    clip: {fileID: 8300000, guid: 618e76735b805d54089579348512f523, type: 3}
+    volume: 0.15
+  - soundEffectName: PrimaryFire5
+    clip: {fileID: 8300000, guid: b4d051e75b2681c4d9638ea31a5b4461, type: 3}
+    volume: 0.15
+  - soundEffectName: PrimaryFire6
+    clip: {fileID: 8300000, guid: 6163817b33593e04d9cb52e04218cb4c, type: 3}
+    volume: 0.15
+  - soundEffectName: HealthPowerUp
+    clip: {fileID: 8300000, guid: 5619dd0359403194598ece18434bc37c, type: 3}
+    volume: 0.15
+  - soundEffectName: DoubleShotPowerUp
+    clip: {fileID: 8300000, guid: 5619dd0359403194598ece18434bc37c, type: 3}
+    volume: 0.12
+  - soundEffectName: SpeedPowerUp
+    clip: {fileID: 8300000, guid: 5619dd0359403194598ece18434bc37c, type: 3}
+    volume: 0.15
+  - soundEffectName: MissilePowerUp
+    clip: {fileID: 8300000, guid: 5619dd0359403194598ece18434bc37c, type: 3}
     volume: 0.15
 --- !u!1 &3947626717449467460
 GameObject:
@@ -864,7 +894,7 @@ MonoBehaviour:
   turnSpeed: 600
   speedWithPowerUp: 20
   speedPowerUpTimerMax: 7.5
-  healthPackAmount: 40
+  healthPackAmount: 75
   doubleShotTimerMax: 6
 --- !u!50 &5361910639252148132
 Rigidbody2D:

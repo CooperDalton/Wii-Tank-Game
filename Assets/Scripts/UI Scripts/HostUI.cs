@@ -16,6 +16,7 @@ public class HostUI : MonoBehaviour
         }
 
         StartGameButton.onClick.AddListener(()=>{
+            TankGameLobby.Instance.DeleteLobby();
             Loader.LoadNetwork(Loader.Scene.GameScene);
         });
     }

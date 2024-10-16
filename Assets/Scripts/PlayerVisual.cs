@@ -27,6 +27,8 @@ public class PlayerVisual : NetworkBehaviour
             gunAnim.SetTrigger("TookDamage");
             bodyAnim.SetTrigger("TookDamage");
         }
+
+        health = e.health;
     }
 
     private void Player_OnAltShoot(object sender, EventArgs e)

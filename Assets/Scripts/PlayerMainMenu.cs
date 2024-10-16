@@ -9,16 +9,10 @@ public class PlayerMainMenu : MonoBehaviour
     [SerializeField] private Transform headOrientation;
     [SerializeField] private Transform explosionBullet;
     [SerializeField] private Transform gunShotPoint;
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
 
-    // Update is called once per frame
     void Update()
     {
-        if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)){
+        if ((Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)) && OptionsUI.Instance.isActive == false){
             Instantiate(explosionBullet, gunShotPoint.position, gunShotPoint.rotation);
         }
 
